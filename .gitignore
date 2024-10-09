@@ -14,3 +14,7 @@
 /repos/world
 /repos/zynq
 
+# Custom Files
+/.idea
+/cmake-build-debug
+CMakeLists.txt
