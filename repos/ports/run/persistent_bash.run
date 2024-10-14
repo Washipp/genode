@@ -12,7 +12,8 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/vfs \
                   [depot_user]/src/vfs_pipe \
                   [depot_user]/src/nitpicker \
-                  [depot_user]/src/fs_rom
+                  [depot_user]/src/fs_rom \
+                  [depot_user]/src/lx_fs
 
 # write default vimrc file
 set vimrc_fd [open [run_dir]/genode/vimrc w]
@@ -86,6 +87,14 @@ install_config {
 		</route>
 	</start>
 
+    <start name="lx_fs" ld="no">
+        <resource name="RAM" quantum="20M"/>
+        <provides> <service name="File_system"/> </provides>
+        <config>
+			<default-policy root="/" writeable="yes"/>
+        </config>
+    </start>
+
 	<start name="vfs" caps="120">
 		<resource name="RAM" quantum="30M"/>
 		<provides><service name="File_system"/></provides>
@@ -105,12 +114,14 @@ install_config {
 				<dir name="pipe"> <pipe/> </dir>
 
 				<dir name="silas"> <inline name="hello"> content </inline> </dir>
+				<dir name="persistent"> <fs /> </dir>
 			</vfs>
 
 			<policy label_prefix="vfs_rom" root="/"/>
 			<default-policy root="/" writeable="yes"/>
 		</config>
 		<route>
+		    <service name="File_system"> <child name="lx_fs"/> </service>
 		    <service name="Terminal"> <child name="terminal"/> </service>
 			<any-service> <parent/> </any-service>
 		</route>
