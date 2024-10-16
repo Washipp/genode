@@ -16,7 +16,8 @@ import_from_depot [depot_user]/src/[base_src] \
                   [depot_user]/src/lx_fs \
                   [depot_user]/src/vfs_fatfs \
                   [depot_user]/src/vfs_import \
-                  [depot_user]/src/vfs_block
+                  [depot_user]/src/vfs_block \
+                  [depot_user]/src/lx_block
 
 # write default vimrc file
 set vimrc_fd [open [run_dir]/genode/vimrc w]
@@ -98,18 +99,10 @@ install_config {
         </config>
     </start>
 
-    <start name="vfs_block">
-        <resource name="RAM" quantum="8M"/>
+    <start name="lx_block" ld="no">
+        <resource name="RAM" quantum="30M"/>
         <provides><service name="Block"/></provides>
-        <config>
-            <vfs>
-                <ram />
-                <import>
-                    <rom name="fat.img"/>
-                </import>
-            </vfs>
-            <default-policy file="/fat.img" block_size="512" writeable="yes"/>
-        </config>
+        <config file="fat.img" block_size="512" writeable="yes"/>
     </start>
 
 	<start name="vfs" caps="120">
@@ -139,7 +132,7 @@ install_config {
 			<default-policy root="/" writeable="yes"/>
 		</config>
 		<route>
-		    <service name="Block"> <child name="vfs_block"/> </service>
+		    <service name="Block"> <child name="lx_block"/> </service>
 		    <service name="File_system"> <child name="lx_fs"/> </service>
 		    <service name="Terminal"> <child name="terminal"/> </service>
 			<any-service> <parent/> </any-service>
