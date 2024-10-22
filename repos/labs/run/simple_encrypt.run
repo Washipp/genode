@@ -1,0 +1,85 @@
+create_boot_directory
+
+import_from_depot [depot_user]/src/lx_block \
+                  [depot_user]/src/report_rom \
+                  [depot_user]/src/vfs_block \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_fatfs \
+                  [depot_user]/src/vfs_import \
+                  [depot_user]/src/lx_fs \
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+    <default-route>
+        <any-service> <parent/> <any-child/> </any-service>
+    </default-route>
+    <default caps="100"/>
+
+    <start name="timer">
+        <resource name="RAM" quantum="1M"/>
+        <provides><service name="Timer"/></provides>
+    </start>
+
+    <start name="lx_block" ld="no" caps="3000">
+        <resource name="RAM" quantum="2500M"/>
+        <provides><service name="Block"/></provides>
+        <config file="fat.img" block_size="512" writeable="yes"/>
+    </start>
+
+    <start name="lx_fs" ld="no">
+        <resource name="RAM" quantum="20M"/>
+        <provides> <service name="File_system"/> </provides>
+        <config>
+			<default-policy root="/" writeable="yes"/>
+        </config>
+    </start>
+
+	<start name="vfs_block" caps="120">
+		<resource name="RAM" quantum="20M"/>
+		<provides> <service name="Block"/> </provides>
+		<config>
+			<vfs>
+				<fs />
+			</vfs>
+			<policy label_prefix="simple_encryption"
+			        file="/fat.img" block_size="512" writeable="yes"/>
+            <default-policy root="/" writeable="yes"/>
+		</config>
+		<route>
+			<service name="File_system"> <child name="lx_fs"/> </service>
+			<any-service> <parent/> </any-service>
+		</route>
+	</start>
+
+    <start name="simple_encryption">
+        <resource name="RAM" quantum="32M"/>
+        <config>
+            <tests>
+				<random length="128M" size="16K" seed="0xdeadbeef" batch="1"/>
+            </tests>
+        </config>
+        <route>
+            <service name="Block"><child name="vfs_block"/></service>
+            <any-service> <parent/> <any-child /> </any-service>
+        </route>
+    </start>
+</config>
+}
+
+build { core init lib/ld timer simple_encryption }
+
+build_boot_image [list {*}[build_artifacts] fat.img]
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until forever
