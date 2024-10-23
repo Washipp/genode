@@ -109,6 +109,8 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
 
         Constructible<Block_connection> _block {};
 
+        const  int _key = 12345;
+
         struct Job : Block_connection::Job
         {
             unsigned const id;
@@ -174,9 +176,9 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
 
             Genode::String<256> text = "ethz";
             char encrypted_message[256] = "";
-            _xor_with_int(text, encrypted_message, 1234);
+            _xor_with_int(text, encrypted_message, _key);
 
-            log("encrypted: '", Cstring(encrypted_message), "'");
+            log("message: '",text,"', key: '",_key,"', encrypted: '", Cstring(encrypted_message), "'");
             _memcpy(dst, encrypted_message, text.length());
             // _memcpy(dst, _scratch_buffer.base, length);
         }
@@ -191,7 +193,7 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
             log("job ", job.id, ": got ", length, " bytes at ", offset);
 
             char result[256] = "";
-            _xor_with_int(Cstring(src), result, 1234);
+            _xor_with_int(Cstring(src), result, _key);
             log("decrypted: '", Cstring(result), "'");
         }
 
