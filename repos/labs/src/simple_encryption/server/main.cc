@@ -102,12 +102,12 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
         size_t const _io_buffer;
         size_t const _batch;
 
-        Allocator_avl _block_alloc{&_alloc};
+        Allocator_avl _block_alloc {&_alloc};
 
         struct Job;
         using Block_connection = Block::Connection<Job>;
 
-        Constructible<Block_connection> _block{};
+        Constructible<Block_connection> _block {};
 
         struct Job : Block_connection::Job
         {
@@ -128,15 +128,15 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
             }
         }
 
-        Block::Session::Info _info{};
+        Block::Session::Info _info {};
 
-        size_t _size_in_blocks{0};
+        size_t _size_in_blocks {0};
 
-        size_t _bytes{0};
-        uint64_t _rx{0};
-        uint64_t _tx{0};
-        unsigned _job_cnt{0};
-        unsigned _completed{0};
+        size_t _bytes {0};
+        uint64_t _rx {0};
+        uint64_t _tx {0};
+        unsigned _job_cnt {0};
+        unsigned _completed {0};
 
         Scratch_buffer &_scratch_buffer;
 
@@ -154,7 +154,7 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
         size_t const _size = _node.attribute_value("size", Number_of_bytes());
         uint64_t const _length = _node.attribute_value("length", Number_of_bytes());
 
-        const char * _xor_with_int(Genode::String<256> input, char * result, int xor_value) {
+        const char *_xor_with_int(Genode::String<256> input, char *result, int xor_value) {
             for (Genode::size_t i = 0; i < input.length(); ++i) {
                 result[i] = static_cast<char>(input.string()[i] ^ xor_value);
             }
@@ -217,12 +217,11 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
         }
 
     protected:
-
         void _handle_block_io() {
             _block->update_jobs(*this);
         }
 
-        Signal_handler<Read_write> _block_io_sigh{
+        Signal_handler<Read_write> _block_io_sigh {
             _env.ep(), *this, &Read_write::_handle_block_io
         };
 
@@ -238,9 +237,7 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
               _batch(_node.attribute_value("batch", 1u)),
               _finished_sig(finished_sig),
               _scratch_buffer(scratch_buffer),
-              _random(_node.attribute_value("seed", 42UL)) {
-
-        }
+              _random(_node.attribute_value("seed", 42UL)) {}
 
         virtual ~Read_write() {};
 
@@ -327,20 +324,20 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
 struct Block_connection_test::Main
 {
     Genode::Env &_env;
-    Genode::Heap _heap{_env.ram(), _env.rm()};
+    Genode::Heap _heap {_env.ram(), _env.rm()};
 
-    Genode::Attached_rom_dataspace _config_rom{_env, "config"};
+    Genode::Attached_rom_dataspace _config_rom {_env, "config"};
 
-    Genode::Number_of_bytes const _scratch_buffer_size{
+    Genode::Number_of_bytes const _scratch_buffer_size {
         _config_rom.xml().attribute_value("scratch_buffer_size",
                                           Genode::Number_of_bytes(1U << 20))
     };
 
-    Genode::Fifo<Read_write> _tests{};
+    Genode::Fifo<Read_write> _tests {};
 
-    Read_write *_current{nullptr};
+    Read_write *_current {nullptr};
 
-    bool _success{true};
+    bool _success {true};
 
     void _handle_finished() {
         /* clean up current test */
@@ -373,11 +370,11 @@ struct Block_connection_test::Main
         }
     }
 
-    Genode::Signal_handler<Main> _finished_sigh{
+    Genode::Signal_handler<Main> _finished_sigh {
         _env.ep(), *this, &Main::_handle_finished
     };
 
-    Scratch_buffer _scratch_buffer{_heap, _scratch_buffer_size};
+    Scratch_buffer _scratch_buffer {_heap, _scratch_buffer_size};
 
     void _construct_tests(Genode::Xml_node config) {
         try {
