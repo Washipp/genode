@@ -8,8 +8,6 @@
 #include <os/session_policy.h>
 #include <util/string.h>
 
-// TODO: Create run script --> adapt "persistent_bash.run" to include this component.
-
 /**
  * Main Idea: Once we receive a submit signal vom the incoming request, we receive a pointer to the payload.
  * We encrypt the data in the payload and add it to the submit queue for the VFS.
@@ -35,19 +33,11 @@ struct Simple_encryption::Task : Block_connection::Job,
 {
     struct Unsupported_Operation : Exception {};
 
-    enum State
-    {
-        INIT,
-        PROCESSED,
-        FINISHED_PROCESSING,
-        DONE
-    } state {INIT};
-
     private:
         Block_connection &_connection;
         Block::Request _request;
         Signal_context_capability _finished_sig;
-        char *_data;
+        char *const _data;
         size_t _size;
         int _key;
 
@@ -60,7 +50,9 @@ struct Simple_encryption::Task : Block_connection::Job,
         }
 
     public:
-        Task(Block_connection &connection, Block::Request request, Signal_context_capability finished_sig,
+        int id;
+
+        Task(int id, Block_connection &connection, Block::Request request, Signal_context_capability finished_sig,
              void *data, size_t size, int key)
             : Job(connection, {
                       .type = request.operation.type,
@@ -72,34 +64,39 @@ struct Simple_encryption::Task : Block_connection::Job,
               _finished_sig(finished_sig),
               _data(static_cast<char *>(data)),
               _size(size),
-              _key(key) {}
+              _key(key),
+              id(id) {}
 
         void handle_block_io() {
             _connection.update_jobs(*this);
         }
 
         void produce_write_content(Task &task, Block::off_t offset, char *dst, size_t length) {
-            log("(III) produce_write_content: ", offset, " - Content: ", Cstring(task._data, length));
+            log("(IV) produce_write_content: ID ", id, " - Content: ", Cstring(task._data, length));
             _xor_with_int(task._data, length, _key);
-            memcpy(dst, task._data, length);
-            state = PROCESSED;
+            memcpy(dst + offset, task._data, length);
         }
 
         void consume_read_result(Task &task, Block::off_t offset, char const *src, size_t length) {
-            log("(IV) consume_read_result: ", offset, " - Content (encr): ", Cstring(task._data, length));
-            memcmp(task._data, src, length);
-            log("(IV-2) consume_read_result Content (decr): ", Cstring(task._data, length));
+            // TODO: Check if the read job is correctly answered.
+            memcpy(task._data, src + offset, length);
             _xor_with_int(task._data, length, _key);
-            state = PROCESSED;
+            if (task.operation().type == Block::Operation::Type::READ) {
+                log("(V) consume_read_result: ID ", id, " - Content (decrypted): ", Cstring(task._data, length));
+            }
         }
 
         void completed(Task &task, bool success) {
-            log("(V) completed: ", task.pending(), " - ", success);
+            log("(VI) completed ID: ", task.id, " - ", task.pending(), " - Success: ", success);
             if (_finished_sig.valid()) {
                 Genode::Signal_transmitter(_finished_sig).submit();
             }
-            _request.success = true;
-            state = DONE;
+
+            if (!success)
+                error("(VI) processing ", task.operation(), " failed");
+
+
+            _request.success = success;
         }
 
         void print(Genode::Output &out) const {
@@ -147,8 +144,13 @@ struct Simple_encryption::Block_session_component : Rpc_object<Block::Session>,
 
 struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
 {
+    int _id_counter = 0;
     Env &_env;
 
+    /**
+     * These variables are needed to handle "incoming" requests
+     * from components where the Block Service is provided to
+     */
     Constructible<Attached_ram_dataspace> _block_ds {};
     Constructible<Block_session_component> _block_session {};
     Signal_handler<Main> _request_handler {_env.ep(), *this, &Main::_handle_requests};
@@ -182,16 +184,20 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
                     if (payload) {
                         block_session.with_content(request, [&](void *ptr, size_t size) {
                             /* ptr points to the block that we need to encrypt and hand to the VFS.*/
-                            log("(I) Added new task with payload: ", &ptr, " size: ", size);
-                            auto *t = new(&_heap) Task(*_block, request, _request_handler, ptr, size, _key);
+                            log("(I) Added new task: ID ", _id_counter, " - ", request.operation, " size: ", size);
+                            auto *t = new(&_heap) Task(_id_counter, *_block, request, _request_handler,
+                                                       ptr, size, _key);
                             _task_queue.enqueue(*t);
-                            progress = true;
+                            progress |= true;
+                            _id_counter++;
                         });
                     } else {
-                        log("(I) Added new task without payload.");
-                        auto *t = new(&_heap) Task(*_block, request, _request_handler, nullptr, 0, _key);
+                        log("(I) Added new task without payload: ID ", _id_counter, " - ");
+                        auto *t = new(&_heap) Task(_id_counter, *_block, request, _request_handler,
+                                                   nullptr, 0, _key);
                         _task_queue.enqueue(*t);
-                        progress = true;
+                        progress |= true;
+                        _id_counter++;
                     }
                 } catch (Task::Unsupported_Operation) {
                     progress = false;
@@ -202,17 +208,18 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
             });
 
             block_session.try_acknowledge([&](Block_session_component::Ack &ack) {
-                Genode::Fifo<Task> _tmp_task_queue {};
-                _task_queue.dequeue([&] (Task &task) {
+                Fifo<Task> _tmp_task_queue {};
+                _task_queue.dequeue_all([&](Task &task) {
                     if (task.get_request().success) {
-                        log("(VI) Acknowledged task. ");
+                        log("(II) Task Acknowledged. ID ", task.id);
                         ack.submit(task.get_request());
-                        progress = true;
-                        destroy(&_heap, &task);
+                        progress |= true;
+                        // destroy(&_heap, &task);
                     } else {
-                        log("(VI) Acknowledged task not DONE");
+                        log("(II) Task not Acknowledged. ID ", task.id);
                         _tmp_task_queue.enqueue(task);
                         task.handle_block_io();
+                        progress |= false;
                     }
                 });
                 _task_queue = _tmp_task_queue;
@@ -222,10 +229,8 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
     }
 
     void _handle_block_io() {
-        // TODO: Signal handler for the _block connection.
-        size_t count = 0;
         _task_queue.for_each([&](Task &task) {
-            log("(II) Task 'block_handle_io' triggered. #", ++count);
+            log("(III) Task 'block_handle_io' triggered. ID ", task.id);
             task.handle_block_io();
         });
     }
