@@ -51,6 +51,7 @@ struct Simple_encryption::Task : Block_connection::Job,
 
     public:
         int id;
+        bool acked = false;
 
         Task(int id, Block_connection &connection, Block::Request request, Signal_context_capability finished_sig,
              void *data, size_t size, int key)
@@ -72,7 +73,6 @@ struct Simple_encryption::Task : Block_connection::Job,
         }
 
         void produce_write_content(Task &task, Block::off_t offset, char *dst, size_t length) {
-            log("(IV) produce_write_content: ID ", id, " - Content: ", Cstring(task._data, length));
             _xor_with_int(task._data, length, _key);
             memcpy(dst + offset, task._data, length);
         }
@@ -81,22 +81,17 @@ struct Simple_encryption::Task : Block_connection::Job,
             // TODO: Check if the read job is correctly answered.
             memcpy(task._data, src + offset, length);
             _xor_with_int(task._data, length, _key);
-            if (task.operation().type == Block::Operation::Type::READ) {
-                log("(V) consume_read_result: ID ", id, " - Content (decrypted): ", Cstring(task._data, length));
-            }
         }
 
         void completed(Task &task, bool success) {
-            log("(VI) completed ID: ", task.id, " - ", task.pending(), " - Success: ", success);
             if (_finished_sig.valid()) {
                 Genode::Signal_transmitter(_finished_sig).submit();
             }
 
             if (!success)
-                error("(VI) processing ", task.operation(), " failed");
+                error("processing ", task.operation(), " failed");
 
-
-            _request.success = success;
+            task._set_success(success);
         }
 
         void print(Genode::Output &out) const {
@@ -105,6 +100,10 @@ struct Simple_encryption::Task : Block_connection::Job,
 
         Block::Request get_request() {
             return _request;
+        }
+
+        void _set_success(bool success) {
+            _request.success = success;
         }
 
     private:
@@ -169,6 +168,8 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
     Allocator_avl _block_alloc {&_heap};
     Constructible<Block_connection> _block {};
 
+    Task *_current {nullptr};
+
     void _handle_requests() {
         if (!_block_session.constructed())
             return;
@@ -184,55 +185,56 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
                     if (payload) {
                         block_session.with_content(request, [&](void *ptr, size_t size) {
                             /* ptr points to the block that we need to encrypt and hand to the VFS.*/
-                            log("(I) Added new task: ID ", _id_counter, " - ", request.operation, " size: ", size);
                             auto *t = new(&_heap) Task(_id_counter, *_block, request, _request_handler,
                                                        ptr, size, _key);
                             _task_queue.enqueue(*t);
                             progress |= true;
                             _id_counter++;
                         });
-                    } else {
-                        log("(I) Added new task without payload: ID ", _id_counter, " - ");
-                        auto *t = new(&_heap) Task(_id_counter, *_block, request, _request_handler,
-                                                   nullptr, 0, _key);
-                        _task_queue.enqueue(*t);
-                        progress |= true;
-                        _id_counter++;
+
+                        return Block::Request_stream::Response::ACCEPTED;
                     }
+                    auto *t = new(&_heap) Task(_id_counter, *_block, request, _request_handler,
+                                               nullptr, 0, _key);
+                    _task_queue.enqueue(*t);
+                    progress |= true;
+                    _id_counter++;
+
+                    return Block::Request_stream::Response::ACCEPTED;
                 } catch (Task::Unsupported_Operation) {
                     progress = false;
                     return Block::Request_stream::Response::REJECTED;
                 }
 
-                return Block::Request_stream::Response::ACCEPTED;
+                return Block::Request_stream::Response::RETRY;
             });
 
-            block_session.try_acknowledge([&](Block_session_component::Ack &ack) {
-                Fifo<Task> _tmp_task_queue {};
-                _task_queue.dequeue_all([&](Task &task) {
-                    if (task.get_request().success) {
-                        log("(II) Task Acknowledged. ID ", task.id);
-                        ack.submit(task.get_request());
+
+            if (_current) {
+                block_session.try_acknowledge([&](Block_session_component::Ack &ack) {
+                    if (_current->acked) {
+                        log("(II) Task already Acknowledged. ID ", _current->id);
+                    } else if (_current->get_request().success) {
+                        ack.submit(_current->get_request());
                         progress |= true;
-                        // destroy(&_heap, &task);
+                        _current->acked = true;
+                        destroy(&_heap, _current);
+                        _task_queue.dequeue([&](Task &head) { _current = &head; });
                     } else {
-                        log("(II) Task not Acknowledged. ID ", task.id);
-                        _tmp_task_queue.enqueue(task);
-                        task.handle_block_io();
-                        progress |= false;
+                        _current->handle_block_io();
                     }
                 });
-                _task_queue = _tmp_task_queue;
-            });
+            }
+            if (!_current) {
+                _task_queue.dequeue([&](Task &head) { _current = &head; });
+                progress |= true;
+            }
         }
         block_session.wakeup_client_if_needed();
     }
 
     void _handle_block_io() {
-        _task_queue.for_each([&](Task &task) {
-            log("(III) Task 'block_handle_io' triggered. ID ", task.id);
-            task.handle_block_io();
-        });
+        _task_queue.for_each([&](Task &task) { task.handle_block_io(); });
     }
 
     Signal_handler<Main> _block_io_sigh {_env.ep(), *this, &Main::_handle_block_io};
@@ -271,7 +273,9 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
     void upgrade(Session_capability, Root::Upgrade_args const &) override {}
 
     /* Closes Block session. */
-    void close(Session_capability) override {
+    void close(Session_capability cap) override {
+        if (!_block_session.constructed() || !(_block_session->cap() == cap))
+            return;
         _block.destruct();
         _block_session.destruct();
         _block_ds.destruct();
@@ -283,6 +287,11 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
         /* Announce "Block::Session" to the parent. */
         _env.parent().announce(_env.ep().manage(*this));
     }
+
+    private:
+        Main(const Main &) = delete;
+
+        Main &operator=(const Main &) = delete;
 };
 
 
