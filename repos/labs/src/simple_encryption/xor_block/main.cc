@@ -1,3 +1,9 @@
+/*
+ * \brief  Block Session that encrypts traffic
+ * \author Silas Meier
+ * \date   2024-10-25
+ */
+
 /* Genode includes */
 #include <base/attached_rom_dataspace.h>
 #include <base/attached_ram_dataspace.h>
