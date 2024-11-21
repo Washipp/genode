@@ -1,0 +1,94 @@
+create_boot_directory
+
+import_from_depot [depot_user]/src/report_rom \
+                  [depot_user]/src/vfs_block \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_import \
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+	</parent-provides>
+
+    <default-route>
+        <any-service> <parent/> <any-child/> </any-service>
+    </default-route>
+
+    <default caps="100"/>
+
+    <start name="report_rom">
+        <resource name="RAM" quantum="3M"/>
+        <provides>
+            <service name="ROM"/>
+            <service name="Report"/>
+        </provides>
+        <config verbose="true"/>
+        <route>
+            <any-service> <parent/> </any-service>
+        </route>
+        <config verbose="no"/>
+    </start>
+
+
+    <start name="vfs_block" caps="1200">
+        <resource name="RAM" quantum="2000M"/>
+        <provides><service name="Block"/></provides>
+        <config>
+            <vfs>
+                <ram/>
+                <import>
+                    <rom name="fat.img"/>
+                </import>
+            </vfs>
+            <default-policy file="fat.img" block_size="512" writeable="yes"/>
+        </config>
+         <route>
+           <any-service> <parent/> </any-service>
+         </route>
+    </start>
+
+    <start name="xor_block" caps="120">
+        <heartbeat rate_ms="10"/>
+        <resource name="RAM" quantum="20M"/>
+        <provides> <service name="Block"/> </provides>
+        <config key="4242">
+            <default-policy root="/" writeable="yes"/>
+        </config>
+        <route>
+            <service name="Block"> <child name="vfs_block"/> </service>
+            <service name="Report"> <child name="report_rom"/> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="<simple_encryption>">
+        <heartbeat />
+        <resource name="RAM" quantum="32M"/>
+        <config>
+            <tests>
+				<random length="128K" size="512" seed="0xdeadbeef" batch="1"/>
+            </tests>
+        </config>
+        <route>
+            <service name="Block"><child name="xor_block"/></service>
+            <any-service> <parent/> <any-child /> </any-service>
+        </route>
+    </start>
+</config>
+}
+
+build { core init lib/ld simple_encryption }
+
+build_boot_image [list {*}[build_artifacts] fat.img]
+
+append qemu_args "-nographic -m 64"
+
+run_genode_until forever

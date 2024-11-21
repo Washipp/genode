@@ -5,7 +5,6 @@
 #include <base/heap.h>
 #include <base/log.h>
 #include <block_session/connection.h>
-#include <os/reporter.h>
 #include <timer_session/connection.h>
 #include <util/string.h>
 
@@ -174,12 +173,12 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
 
             log("job ", job.id, ": writing ", length, " bytes at ", offset);
 
-            Genode::String<256> text = "ethz";
-            char encrypted_message[256] = "";
-            _xor_with_int(text, encrypted_message, _key);
-
-            log("message: '",text,"', key: '",_key,"', encrypted: '", Cstring(encrypted_message), "'");
-            _memcpy(dst, encrypted_message, text.length());
+            Genode::String<256> text = "gapfruit is great";
+            // char encrypted_message[256] = "";
+            // _xor_with_int(text, encrypted_message, _key);
+            //
+            // log("message: '",text,"', key: '",_key,"', encrypted: '", Cstring(encrypted_message), "'");
+            _memcpy(dst, text.string(), text.length());
             // _memcpy(dst, _scratch_buffer.base, length);
         }
 
@@ -192,9 +191,9 @@ struct Block_connection_test::Read_write : private Genode::Fifo<Read_write>::Ele
             _bytes += length;
             log("job ", job.id, ": got ", length, " bytes at ", offset);
 
-            char result[256] = "";
-            _xor_with_int(Cstring(src), result, _key);
-            log("decrypted: '", Cstring(result), "'");
+            // char result[256] = "";
+            // _xor_with_int(Cstring(src), result, _key);
+            log("decrypted: '", Cstring(src), "'");
         }
 
         /**

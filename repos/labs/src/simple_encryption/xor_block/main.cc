@@ -14,6 +14,9 @@
 #include <os/session_policy.h>
 #include <util/string.h>
 
+/* Used for debugging. Upon call, the execution waits for an ENTER input. */
+extern "C" void wait_for_continue(void);
+
 /**
  * Main Idea: Once we receive a submit signal vom the incoming request, we receive a pointer to the payload.
  * We encrypt the data in the payload and add it to the submit queue for the VFS.
@@ -256,7 +259,7 @@ struct Simple_encryption::Main : Rpc_object<Typed_root<Block::Session> >
 
         _block_ds.construct(_env.ram(), _env.rm(), ds_size);
         _block_session.construct(_env.rm(), _block_ds->cap(), _env.ep(), _request_handler, _info);
-        log("Xor-block session created");
+
         return _block_session->cap();
     }
 
