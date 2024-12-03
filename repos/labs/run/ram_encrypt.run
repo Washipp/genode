@@ -69,7 +69,7 @@ install_config {
         </route>
     </start>
 
-    <start name="<simple_encryption>">
+    <start name="simple_encryption">
         <heartbeat />
         <resource name="RAM" quantum="32M"/>
         <config>
