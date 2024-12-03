@@ -1,0 +1,13 @@
+LICENSE  := ApacheLicense2.0
+VERSION  := v4.21c
+DOWNLOAD := afl++.archive
+
+URL(afl++) := https://github.com/AFLplusplus/AFLplusplus/archive/refs/tags/$(VERSION).tar.gz
+SHA(afl++) := 11f7c77d37cff6e7f65ac7cc55bab7901e0c6208e845a38764394d04ed567b30
+DIR(afl++) := src/app/afl++
+
+PATCHES   := $(addprefix ${DIR(afl++)}/patches/, \
+                         $(shell cat $(REP_DIR)/${DIR(afl++)}/patches/series))
+PATCH_OPT := -p1 -d ${DIR(afl++)}
+
+default : $(DOWNLOAD)

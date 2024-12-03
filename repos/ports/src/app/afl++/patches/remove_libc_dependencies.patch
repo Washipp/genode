@@ -1,0 +1,43 @@
+diff --git a/instrumentation/afl-compiler-rt.o.c b/instrumentation/afl-compiler-rt.o.c
+index 77a9623c..d890f6d6 100644
+--- a/instrumentation/afl-compiler-rt.o.c
++++ b/instrumentation/afl-compiler-rt.o.c
+@@ -40,16 +40,7 @@ __attribute__((weak)) void __sanitizer_symbolize_pc(void *, const char *fmt,
+ #include "xxhash.h"
+ #undef XXH_INLINE_ALL
+ 
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <signal.h>
+-#include <unistd.h>
+-#include <string.h>
+-#include <assert.h>
+-#include <stdint.h>
+-#include <stddef.h>
+-#include <limits.h>
+-#include <errno.h>
++#include "afl-genode.h"
+ 
+ #include <sys/mman.h>
+ #if !defined(__HAIKU__) && !defined(__OpenBSD__)
+@@ -58,7 +49,6 @@ __attribute__((weak)) void __sanitizer_symbolize_pc(void *, const char *fmt,
+ #ifndef USEMMAP
+   #include <sys/shm.h>
+ #endif
+-#include <sys/wait.h>
+ #include <sys/types.h>
+ 
+ #if !__GNUC__
+@@ -183,9 +173,9 @@ PREV_LOC_T __afl_prev_loc[NGRAM_SIZE_MAX];
+ PREV_LOC_T __afl_prev_caller[CTX_MAX_K];
+ u32        __afl_prev_ctx;
+ #else
+-__thread PREV_LOC_T __afl_prev_loc[NGRAM_SIZE_MAX];
+-__thread PREV_LOC_T __afl_prev_caller[CTX_MAX_K];
+-__thread u32        __afl_prev_ctx;
++__thread PREV_LOC_T __afl_prev_loc[NGRAM_SIZE_MAX]; // ignore error
++__thread PREV_LOC_T __afl_prev_caller[CTX_MAX_K];   // ignore error
++__thread u32        __afl_prev_ctx;                 // ignore error
+ #endif
+ 
+ struct cmp_map *__afl_cmp_map;
