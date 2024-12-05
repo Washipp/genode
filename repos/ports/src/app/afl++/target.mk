@@ -97,7 +97,7 @@ AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
 
 #src/afl-performance.o : $(COMM_HDR) src/afl-performance.c include/hash.h
 #	$(CC) $(CFLAGS) $(CFLAGS_OPT) $(SPECIAL_PERFORMANCE) -Iinclude -c src/afl-performance.c -o src/afl-performance.o
-SRC_C += $(AFL++_DIR)/afl-performance
+SRC_C += $(AFL++_DIR)/src/afl-performance.c
 
 #src/afl-common.o : $(COMM_HDR) src/afl-common.c include/common.h
 #	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(SPECIAL_PERFORMANCE) -c src/afl-common.c -o src/afl-common.o
