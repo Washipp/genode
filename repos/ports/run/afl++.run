@@ -2,7 +2,7 @@
 # Build
 #
 
-build { core lib/ld  init app/afl++ }
+build { core lib/ld init app/afl++ }
 
 create_boot_directory
 
@@ -22,7 +22,7 @@ install_config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="60"/>
-	<start name="afl++">
+	<start name="afl-fuzz">
 		<resource name="RAM" quantum="1M"/>
 	</start>
 </config>}
