@@ -1,6 +1,5 @@
-#include <base/component.h>
-#include <base/log.h>
-#include <hello_session/connection.h>
+#include "base/component.h"
+#include "base/log.h"
 
 
 void Component::construct(Genode::Env &env)
