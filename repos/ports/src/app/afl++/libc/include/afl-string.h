@@ -3,6 +3,8 @@
 
 #include "afl-stddef.h"
 
+void lx_emul_trace(const char *s);
+
 /* Return the length of S.  */
 extern size_t strlen (const char *_s);
 
@@ -31,13 +33,13 @@ extern char *strchr (const char *_s, int _c);
 extern char *strerror (int __errnum);
 
 /* Compare N characters of S1 and S2.  */
-extern int strncmp (const char *__s1, const char *__s2, size_t __n);
+extern int strncmp (const char *s1, const char *s2, size_t n);
 
 /* Append no more than N characters from SRC onto DEST.  */
 extern char *strncat (char *__restrict __dest, const char *__restrict __src, size_t __n);
 
 /* Copy N bytes of SRC to DEST, guaranteeing correct behavior for overlapping strings.  */
-extern void *memmove (void *__dest, const void *__src, size_t __n);
+extern void *memmove (void *dest, const void *src, size_t n);
 
 /* Find the last occurrence of C in S.  */
 extern char *strrchr (const char *__s, int __c);

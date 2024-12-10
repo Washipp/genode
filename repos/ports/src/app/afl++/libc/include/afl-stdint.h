@@ -1,8 +1,8 @@
-
 #ifndef GENODE_AFL_STDINT_H
 #define GENODE_AFL_STDINT_H
-#  define __UINT64_C(c)	c ## UL
-#define UINT64_MAX		(__UINT64_C(18446744073709551615))
+
+#define UINT64_C(c)    c ## UL
+#define UINT64_MAX     (UINT64_C(18446744073709551615))
 
 #endif //GENODE_AFL_STDINT_H
 

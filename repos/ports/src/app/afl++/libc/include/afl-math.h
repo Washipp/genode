@@ -11,26 +11,28 @@
 # define __GNUC_PREREQ(maj, min) 0
 #endif
 /* Return nonzero value if X is not +-Inf or NaN.  */
-# if (__GNUC_PREREQ (4,4) && !defined __SUPPORT_SNAN__)
+# if (__GNUC_PREREQ (4, 4) && !defined __SUPPORT_SNAN__)
 #  define isfinite(x) __builtin_isfinite (x)
 # else
 #  define isfinite(x) __MATH_TG ((x), __finite, (x))
 # endif
 /* Return nonzero value if X is a NaN.  We could use `fpclassify' but
    we already have this functions `__isnan' and it is faster.  */
-# if (__GNUC_PREREQ (4,4) && !defined __SUPPORT_SNAN__)
+# if (__GNUC_PREREQ (4, 4) && !defined __SUPPORT_SNAN__)
 #  define isnan(x) __builtin_isnan (x)
 # else
 #  define isnan(x) __MATH_TG ((x), __isnan, (x))
 # endif
 
-typedef long int __off_t;	/* Type of file sizes and offsets.  */
-#define PROT_READ	0x1		/* Page can be read.  */
-#define MAP_PRIVATE	0x02		/* Changes are private.  */
-#define MAP_FAILED	((void *) -1)
+typedef long int __off_t;    /* Type of file sizes and offsets.  */
+#define PROT_READ      0x1   /* Page can be read.  */
+#define MAP_PRIVATE    0x02  /* Changes are private.  */
+#define MAP_FAILED     ((void *) -1)
 
 extern double log(double x);
+
 extern double log2(double x);
+
 extern double log10(double x);
 
 #endif //GENODE_AFL_MATH_H

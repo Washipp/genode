@@ -1,35 +1,22 @@
 #ifndef GENODE_AFL_CTYPE_H
 #define GENODE_AFL_CTYPE_H
 
-#define _ISbit(bit)	((bit) < 8 ? ((1 << (bit)) << 8) : ((1 << (bit)) >> 8))
-enum
-{
-    _ISupper = _ISbit (0),	/* UPPERCASE.  */
-    _ISlower = _ISbit (1),	/* lowercase.  */
-    _ISalpha = _ISbit (2),	/* Alphabetic.  */
-    _ISdigit = _ISbit (3),	/* Numeric.  */
-    _ISxdigit = _ISbit (4),	/* Hexadecimal numeric.  */
-    _ISspace = _ISbit (5),	/* Whitespace.  */
-    _ISprint = _ISbit (6),	/* Printing.  */
-    _ISgraph = _ISbit (7),	/* Graphical.  */
-    _ISblank = _ISbit (8),	/* Blank (usually SPC and TAB).  */
-    _IScntrl = _ISbit (9),	/* Control character.  */
-    _ISpunct = _ISbit (10),	/* Punctuation.  */
-    _ISalnum = _ISbit (11)	/* Alphanumeric.  */
-};
+/* Return lowercase of C if it exists. */
+extern int tolower(int c);
+/* Checks  for  white-space characters.  In the "C" and "POSIX" locales,
+ * these are: space, form-feed ('\f'), newline ('\n'),  carriage  return  ('\r'),
+ * horizontal  tab ('\t'), and vertical tab('\v').*/
+extern int isspace(int c);
+/* Checks for a digit (0 through 9). */
+extern int isdigit(int c);
+/* Checks for hexadecimal digits, that is, one of
+0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F.*/
+extern int isxdigit(int c);
+/* Checks for any printable character including space. */
+extern int isprint(int c);
+/* Checks  whether  c is a 7-bit unsigned char value that fits into the ASCII character set. */
+extern int isascii(int c);
+/* Checks for an alphanumeric character; it is equivalent to (isalpha(c) || isdigit(c)). */
+extern int isalnum(int c);
 
-extern const unsigned short int **__ctype_b_loc (void);
-
-extern int tolower (int __c);
-
-# define __isctype(c, type)  ((*__ctype_b_loc ())[(int) (c)] & (unsigned short int) type)
-# define isspace(c)	__isctype((c), _ISspace)
-# define isalnum(c)	__isctype((c), _ISalnum)
-
-# define isdigit(c)	__isctype((c), _ISdigit)
-
-# define isxdigit(c)	__isctype((c), _ISxdigit)
-# define isprint(c)	__isctype((c), _ISprint)
-#define	__isascii(c)	(((c) & ~0x7f) == 0)	/* If C is a 7 bit value.  */
-#  define isascii(c)	__isascii (c)
 #endif //GENODE_AFL_CTYPE_H

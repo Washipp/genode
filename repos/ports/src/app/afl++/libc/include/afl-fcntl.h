@@ -8,10 +8,10 @@
 #define O_CREAT	         0100
 #define O_TRUNC	         01000
 
-# define LOCK_EX	2	/* Exclusive lock.  */
-# define LOCK_NB	4	/* Or'd with one of the above to prevent */
+#define LOCK_EX	2	/* Exclusive lock.  */
+#define LOCK_NB	4	/* Or'd with one of the above to prevent */
 
-
+// TODO: Design a system, that read/writes. Probably something from vfs.h
 /* Open FILE and return a new file descriptor for it, or -1 on error.
    OFLAG determines the type of access used.  If O_CREAT or O_TMPFILE is set
    in OFLAG, the third argument is taken as a `mode_t', the mode of the

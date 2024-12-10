@@ -100,4 +100,10 @@ extern __pid_t getpid (void);
 
 /* Get the process group ID of process PID.  */
 extern __pid_t getpgid (__pid_t __pid);
+
+// TODO: The setup could be done using XML or some other way.
+/* These three declarations are used to read the values from the command line when initializing the fuzzer. */
+extern int getopt (int ___argc, char *const *___argv, const char *__shortopts);
+extern char *optarg;
+extern int optind;
 #endif //GENODE_AFL_UNISTD_H

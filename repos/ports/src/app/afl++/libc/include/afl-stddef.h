@@ -1,8 +1,8 @@
 #ifndef GENODE_AFL_STDDEF_H
 #define GENODE_AFL_STDDEF_H
 
-#define __OFF_T_TYPE		long int
-typedef __OFF_T_TYPE __off_t;	/* Type of file sizes and offsets.  */
+typedef long int __off_t;    /* Type of file sizes and offsets.  */
+typedef unsigned long u_long;
 
 #define offsetof(TYPE, MEMBER) __builtin_offsetof (TYPE, MEMBER)
 
