@@ -2,30 +2,31 @@
 #include "afl-ctype.h"
 #include "sys/afl-null.h"
 #include "afl-limits.h"
+#include "afl-errno.h"
 #include "xoroshiro.h"
 
 #define RAND_MAD 32767
 static unsigned long next = 1;
 
-void *realloc(void *_ptr, size_t _size);
+void *realloc(void *ptr, size_t size);
 
-void *malloc(size_t _size);
+void *malloc(size_t size);
 
-void *calloc(size_t __nmemb, size_t __size);
+void *calloc(size_t nmemb, size_t size);
 
-void free(void *_ptr);
+void free(void *ptr);
 
 void abort(void);
 
-void exit(int _status);
+void exit(int status);
 
-int atexit(void (*__func)(void));
+int atexit(void (*func)(void));
 
-char *getenv(const char *__name);
+char *getenv(const char *name);
 
-int setenv(const char *__name, const char *__value, int __replace);
+int setenv(const char *name, const char *value, int replace);
 
-int unsetenv(const char *__name);
+int unsetenv(const char *name);
 
 int atoi(const char *str) {
     return (int)strtol(str, NULL, 10);
@@ -89,7 +90,7 @@ long int strtol(const char *__restrict nptr, char **__restrict endptr, int base)
      * overflow.
      */
     cutoff = neg ? (unsigned long)-(LONG_MIN + LONG_MAX) + LONG_MAX : LONG_MAX;
-    cutlim = cutoff % base;
+    cutlim = (int)cutoff % base;
     cutoff /= base;
     for ( ; ; c = *s++) {
         if (c >= '0' && c <= '9')
@@ -112,15 +113,15 @@ long int strtol(const char *__restrict nptr, char **__restrict endptr, int base)
     }
     if (any < 0) {
         acc = neg ? LONG_MIN : LONG_MAX;
-//        errno = ERANGE;
+        errno = ERANGE;
     } else if (!any) {
         noconv:
-//        errno = EINVAL;
+        errno = EINVAL;
     } else if (neg)
         acc = -acc;
     if (endptr != NULL)
         *endptr = (char *)(any ? s - 1 : nptr);
-    return (acc);
+    return (long)(acc);
 }
 
 /* The errno are not set. (libc implementation) */
@@ -163,7 +164,7 @@ long long int strtoll(const char *__restrict nptr, char **__restrict endptr, int
         goto noconv;
 
     cutoff = ULLONG_MAX / base;
-    cutlim = ULLONG_MAX % base;
+    cutlim = (int) ULLONG_MAX % base;
     for ( ; ; c = *s++) {
         if (c >= '0' && c <= '9')
             c -= '0';
@@ -185,15 +186,15 @@ long long int strtoll(const char *__restrict nptr, char **__restrict endptr, int
     }
     if (any < 0) {
         acc = ULLONG_MAX;
-//        errno = ERANGE;
+        errno = ERANGE;
     } else if (!any) {
         noconv:
-//        errno = EINVAL;
+        errno = EINVAL;
     } else if (neg)
         acc = -acc;
     if (endptr != NULL)
         *endptr = (char *)(any ? s - 1 : nptr);
-    return (acc);
+    return (long long)(acc);
 }
 
 /* The errno are not set. (libc implementation) */
@@ -235,7 +236,7 @@ unsigned long int strtoul(const char *__restrict nptr, char **__restrict endptr,
         goto noconv;
 
     cutoff = ULONG_MAX / base;
-    cutlim = ULONG_MAX % base;
+    cutlim = (int) ULONG_MAX % base;
     for ( ; ; c = *s++) {
         if (c >= '0' && c <= '9')
             c -= '0';
@@ -257,10 +258,10 @@ unsigned long int strtoul(const char *__restrict nptr, char **__restrict endptr,
     }
     if (any < 0) {
         acc = ULONG_MAX;
-//        errno = ERANGE;
+        errno = ERANGE;
     } else if (!any) {
         noconv:
-//        errno = EINVAL;
+        errno = EINVAL;
     } else if (neg)
         acc = -acc;
     if (endptr != NULL)
@@ -329,7 +330,7 @@ unsigned long long int strtoull(const char *__restrict nptr, char **__restrict e
      */
     cutoff = neg ? (unsigned long long)-(LLONG_MIN + LLONG_MAX) + LLONG_MAX
                  : LLONG_MAX;
-    cutlim = cutoff % base;
+    cutlim = (int)cutoff % base;
     cutoff /= base;
     for ( ; ; c = *s++) {
         if (c >= '0' && c <= '9')
@@ -352,10 +353,10 @@ unsigned long long int strtoull(const char *__restrict nptr, char **__restrict e
     }
     if (any < 0) {
         acc = neg ? LLONG_MIN : LLONG_MAX;
-//        errno = ERANGE;
+        errno = ERANGE;
     } else if (!any) {
         noconv:
-//        errno = EINVAL;
+        errno = EINVAL;
     } else if (neg)
         acc = -acc;
     if (endptr != NULL)
