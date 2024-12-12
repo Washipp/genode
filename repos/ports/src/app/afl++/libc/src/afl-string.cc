@@ -2,27 +2,26 @@
 #include "afl-stddef.h"
 #include "afl-limits.h"
 #include "afl-stdio.h"
-#include "afl-null.h"
-#include "afl-stdlib.h"
+#include "sys/afl-null.h"
 #include <util/string.h>
 #include <base/log.h>
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
 /* Return the length of S.  */
-size_t strlen(const char *_s) {
-    return Genode::strlen(_s);
+size_t strlen(const char *s) {
+    return Genode::strlen(s);
 }
 
 /* Compare N bytes of S1 and S2.  */
-int memcmp(const void *_s1, const void *_s2, size_t _n) {
-    return Genode::memcmp(_s1, _s2, _n);
+int memcmp(const void *s1, const void *s2, size_t n) {
+    return Genode::memcmp(s1, s2, n);
 }
 
 /* Copy SRC to DEST.  */
 char *strcpy(char *__restrict dest, const char *__restrict src) {
-    while (*src)
-        *dest++ = *src++;
+    Genode::copy_cstring(dest, src, strlen(src) + 1);
+
     return dest;
 }
 
@@ -35,30 +34,30 @@ char *strncpy(char *__restrict dest, const char *__restrict src, size_t _n) {
 }
 
 /* Return the length of the initial segment of S which consists entirely of characters not in charset.  */
-size_t strcspn(const char *s, const char *charset) {
+size_t strcspn(const char *s, const char *charset) {(void)s;(void)charset;
     NOT_IMPLEMENTED;
     return 0;
 }
 
 /* Find the first occurrence of NEEDLE in HAYSTACK.  */
-char *strstr(const char *_haystack, const char *_needle) {
+char *strstr(const char *haystack, const char *needle) {(void)haystack;(void)needle;
     NOT_IMPLEMENTED;
     return 0;
 }
 
 /* Append SRC onto DEST. (libc implementation)  */
-char *strcat(char *__restrict __dest, const char *__restrict __src) {
-    char *save = __dest;
+char *strcat(char *__restrict dest, const char *__restrict src) {
+    char *save = dest;
 
-    for (; *__dest; ++__dest);
-    while ((*__dest++ = *__src++));
+    for (; *dest; ++dest);
+    while ((*dest++ = *src++));
     return (save);
 }
 
 /* Return a string describing the meaning of the `errno' code in ERRNUM.  */
-char *strerror(int __errnum) {
+char *strerror(int errnum) {
     static char ebuf[NL_TEXTMAX];
-    snprintf(ebuf, NL_TEXTMAX, "Unknown error number: %d", __errnum);
+    snprintf(ebuf, NL_TEXTMAX, "Unknown error number: %d", errnum);
     return ebuf;
 }
 
@@ -95,18 +94,18 @@ void *memmove(void *dest, const void *src, size_t n) {
     return Genode::memmove(dest, src, n);
 }
 
-/* Find the first occurrence of CH in P. (libc implementation) */
+/* Find the first occurrence of CH in P. (libc implementation)
+ * Else, see libc.cc form the gcov implementation. */
 char *strchr(const char *p, int ch){
     char c;
 
-    c = ch;
+    c = (char)ch;
     for (;; ++p) {
         if (*p == c)
             return ((char *)p);
         if (*p == '\0')
             return (NULL);
     }
-    /* NOTREACHED */
 }
 
 /* Find the last occurrence of CH in P. (libc implementation) */
@@ -114,7 +113,7 @@ char *strrchr(const char *p, int ch) {
     char *save;
     char c;
 
-    c = ch;
+    c = (char)ch;
     for (save = NULL;; ++p) {
         if (*p == c)
             save = (char *)p;
@@ -135,10 +134,10 @@ char *strsep(char **__restrict stringp, const char *__restrict delim) {
     if ((s = *stringp) == NULL)
         return (NULL);
     for (tok = s;;) {
-        c = *s++;
+        c = (unsigned char)*s++;
         spanp = delim;
         do {
-            if ((sc = *spanp++) == c) {
+            if ((sc = (unsigned char)*spanp++) == c) {
                 if (c == 0)
                     s = NULL;
                 else
@@ -151,7 +150,7 @@ char *strsep(char **__restrict stringp, const char *__restrict delim) {
 }
 
 /* Duplicate S, returning an identical malloc'd string.  */
-char *strdup(const char *str) {
+char *strdup(const char *str) {(void)str;
     // TODO Implement malloc/port it somehow from malloc_free.cc
 //    size_t len;
 //    char *copy;
@@ -162,6 +161,7 @@ char *strdup(const char *str) {
 //    Genode::memcpy(copy, str, len);
 //    return (copy);
     NOT_IMPLEMENTED;
+    return nullptr;
 }
 
 /* Search N bytes of S for C. (libc implementation) */
@@ -182,5 +182,5 @@ void *memcpy(void *a, const void *b, size_t c) {
 }
 
 void *memset(void *a, int b, size_t c) {
-    return Genode::memset(a, b, c);
+    return Genode::memset(a, (Genode::uint8_t) b, c);
 }

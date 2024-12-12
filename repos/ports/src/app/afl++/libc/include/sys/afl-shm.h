@@ -51,11 +51,14 @@ struct shmid_ds
 };
 
 /* Get shared memory segment.  */
-extern int shmget (int __key, size_t __size, int __shmflg);
+extern int shmget (int key, size_t size, int shmflg);
 
 /* Shared memory control operation.  */
-extern int shmctl (int __shmid, int __cmd, struct shmid_ds *__buf);
+extern int shmctl (int shmid, int cmd, struct shmid_ds *buf);
 
 /* Attach shared memory segment.  */
-extern void *shmat (int __shmid, const void *__shmaddr, int __shmflg);
+extern void *shmat (int shmid, const void *shmaddr, int shmflg);
+
+/* Detach shared memory segment.  */
+extern int shmdt (const void *shmaddr);
 #endif //GENODE_AFL_SHM_H

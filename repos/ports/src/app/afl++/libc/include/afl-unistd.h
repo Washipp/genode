@@ -2,7 +2,6 @@
 #define GENODE_AFL_UNISTD_H
 
 #include "afl-stddef.h"
-#include "sys/afl-types.h"
 
 
 /* Values for the second argument to access. These may be OR'd together.  */
@@ -12,7 +11,7 @@
 #define	F_OK	0		/* Test for existence.  */
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
-extern int execv (const char *__path, char *const _argv[]);
+extern int execv (const char *path, char *const argv[]);
 
 /* Get the pathname of the current working directory,
    and put it in SIZE bytes of BUF.  Returns NULL if the
@@ -21,7 +20,7 @@ extern int execv (const char *__path, char *const _argv[]);
    an array is allocated with `malloc'; the array is SIZE
    bytes long, unless SIZE == 0, in which case it is as
    big as necessary.  */
-extern char *getcwd (char *_buf, size_t _size);
+extern char *getcwd (char *buf, size_t size);
 
 /* Make the process sleep for SECONDS seconds, or until a signal arrives
    and is not ignored.  The function returns the number of seconds less
@@ -61,7 +60,7 @@ extern int ftruncate (int _fd, __off_t _length);
 /* Create a new session with the calling process as its leader.
    The process group IDs of the session and the calling process
    are set to the process ID of the calling process, which is returned.  */
-extern __pid_t setsid (void);
+extern int setsid (void);
 
 /* Duplicate FD to FD2, closing FD2 and making it open on the same file.  */
 extern int dup2 (int __fd, int __fd2);
@@ -76,34 +75,53 @@ extern int link (const char *__from, const char *__to);
 extern int rmdir (const char *__path);
 
 /* Close the file descriptor FD. */
-extern int close (int __fd);
+extern int close (int fd);
 
 /* Read NBYTES into BUF from FD.  Return the number read, -1 for errors or 0 for EOF.*/
-extern ssize_t read (int __fd, void *__buf, size_t __nbytes);
+extern long int read (int fd, void *buf, size_t nbytes);
 
 /* Write N bytes of BUF to FD.  Return the number written, or -1.*/
-extern ssize_t write (int __fd, const void *__buf, size_t __n);
+extern long int write (int fd, const void *buf, size_t n);
 
 /* Clone the calling process, creating an exact copy.
    Return -1 for errors, 0 to the new process, and the process ID of the new process to the old process.  */
-extern __pid_t fork (void);
+extern int fork (void);
 
 /* Create a one-way communication channel (pipe). If successful, two file descriptors are stored in PIPEDES;
    bytes written on PIPEDES[1] can be read from PIPEDES[0]. Returns 0 if successful, -1 if not.  */
-extern int pipe (int __pipedes[2]);
+extern int pipe (int pipedes[2]);
+
 
 /* Make a symbolic link to FROM named TO.  */
-extern int symlink (const char *__from, const char *__to);
+extern int symlink (const char *from, const char *to);
 
 /* Get the process ID of the calling process.  */
-extern __pid_t getpid (void);
+extern int getpid (void);
 
 /* Get the process group ID of process PID.  */
-extern __pid_t getpgid (__pid_t __pid);
+extern int getpgid (int pid);
 
 // TODO: The setup could be done using XML or some other way.
 /* These three declarations are used to read the values from the command line when initializing the fuzzer. */
-extern int getopt (int ___argc, char *const *___argv, const char *__shortopts);
+extern int getopt (int argc, char *const *argv, const char *shortopts);
 extern char *optarg;
 extern int optind;
+
+/* Invoke `system call' number SYSNO, passing it the remaining arguments.
+   This is completely system-dependent, and not often useful.
+
+   In Unix, `syscall' sets `errno' for all errors and most calls return -1
+   for errors; in many systems you cannot pass arguments or get return
+   values for all system calls (`pipe', `fork', and `getppid' typically
+   among them).
+
+   In Mach, all system calls take normal arguments and always return an
+   error code (zero for success).  */
+extern long int syscall (long int sysno, ...);
+
+/* Get the value of the system variable NAME.  */
+extern long int sysconf (int name);
+
+/* Terminate program execution with the low-order 8 bits of STATUS.  */
+extern void _exit (int status);
 #endif //GENODE_AFL_UNISTD_H
