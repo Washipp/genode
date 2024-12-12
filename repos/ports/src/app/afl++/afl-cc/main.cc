@@ -5,5 +5,5 @@
 void Component::construct(Genode::Env &env)
 {
     env.parent().heartbeat_response();
-    Genode::log("Test completed.");
+    Genode::log("afl-cc test completed.");
 }

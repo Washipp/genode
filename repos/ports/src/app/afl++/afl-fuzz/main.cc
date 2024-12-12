@@ -4,6 +4,6 @@
 
 void Component::construct(Genode::Env &env)
 {
-    env.parent().heartbeat_response();
+    env.exec_static_constructors();
     Genode::log("Test completed.");
 }

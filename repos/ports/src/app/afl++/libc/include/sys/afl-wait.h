@@ -5,6 +5,10 @@
 
 #define	WNOHANG		1	/* Don't block waiting.  */
 
+/* Waitflags */
+
+#define	WUNTRACED	2	/* Report status of stopped children.  */
+
 /* Wait for a child matching PID to die.
    If PID is greater than 0, match any process whose process ID is PID.
    If PID is (pid_t) -1, match any process.
