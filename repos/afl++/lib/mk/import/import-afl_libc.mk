@@ -1,0 +1,1 @@
+# When "afl-libc" is included as a LIBS, this file is automatically imported.
