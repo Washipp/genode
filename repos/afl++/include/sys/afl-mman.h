@@ -15,7 +15,8 @@
 
 /* Deallocate any mapping for the region starting at ADDR and extending LEN
    bytes.  Returns 0 if successful, -1 for errors (and sets errno).  */
-extern "C" int munmap (void *__addr, size_t __len);
-extern "C" void *mmap(void *__addr, size_t __len, int __prot, int __flags, int __fd, __off_t __offset);
+extern "C" int munmap (void *addr, size_t len);
+
+extern "C" void *mmap(void *addr, size_t len, int prot, int flags, int fd, __off_t offset);
 
 #endif //GENODE_AFL_MMAN_H
