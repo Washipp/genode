@@ -4,6 +4,8 @@
 #include <base/log.h>
 #include <base/sleep.h>
 
+#define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
+
 
 /* Values for the second argument to access. These may be OR'd together.  */
 #define	R_OK	4		/* Test for read permission.  */
@@ -12,7 +14,12 @@
 #define	F_OK	0		/* Test for existence.  */
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
-int execv (const char *path, char *const argv[]);
+int execv (const char *path, char *const argv[]) {
+    (void)path;
+    (void)argv;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Get the pathname of the current working directory,
    and put it in SIZE bytes of BUF.  Returns NULL if the
@@ -21,7 +28,12 @@ int execv (const char *path, char *const argv[]);
    an array is allocated with `malloc'; the array is SIZE
    bytes long, unless SIZE == 0, in which case it is as
    big as necessary.  */
-char *getcwd (char *buf, size_t size);
+char *getcwd (char *buf, size_t size) {
+    (void)buf;
+    (void)size;
+    NOT_IMPLEMENTED;
+    return nullptr;
+}
 
 /* Make the process sleep for SECONDS seconds, or until a signal arrives
    and is not ignored.  The function returns the number of seconds less
@@ -33,50 +45,95 @@ char *getcwd (char *buf, size_t size);
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-unsigned int sleep (unsigned int _seconds);
-
-
-typedef unsigned int __useconds_t; /* Count of microseconds.  */
+unsigned int sleep (unsigned int seconds) {
+    (void)seconds;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Sleep USECONDS microseconds, or until a signal arrives that is not blocked
    or ignored.
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-int usleep (__useconds_t _useconds);
+int usleep (__useconds_t useconds) {
+    (void)useconds;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Move FD's file position to OFFSET bytes from the
    beginning of the file (if WHENCE is SEEK_SET),
    the current position (if WHENCE is SEEK_CUR),
    or the end of the file (if WHENCE is SEEK_END).
    Return the new file position.  */
-__off_t lseek (int _fd, __off_t _offset, int _whence);
+__off_t lseek (int fd, __off_t offset, int whence) {
+    (void)fd;
+    (void )offset;
+    (void )whence;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Remove the link NAME.  */
-int unlink (const char *_name);
+int unlink (const char *name) {
+    (void )name;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Truncate the file FD is open on to LENGTH bytes.  */
-int ftruncate (int _fd, __off_t _length);
+int ftruncate (int fd, __off_t length) {
+    (void)fd;
+    (void )length;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Create a new session with the calling process as its leader.
    The process group IDs of the session and the calling process
    are set to the process ID of the calling process, which is returned.  */
-int setsid (void);
+int setsid (void) {
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Duplicate FD to FD2, closing FD2 and making it open on the same file.  */
-int dup2 (int __fd, int __fd2);
+int dup2 (int fd, int fd2) {
+    (void)fd;
+    (void)fd2;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Test for access to NAME using the real UID and real GID.  */
-int access (const char *__name, int __type);
+int access (const char *name, int type) {
+    (void)name;
+    (void)type;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Make a link to FROM named TO.  */
-int link (const char *__from, const char *__to);
-
+int link (const char *from, const char *to) {
+    (void)from;
+    (void)to;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 /* Remove the directory PATH.  */
-int rmdir (const char *__path);
+int rmdir (const char *path) {
+    (void)path;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Close the file descriptor FD. */
-int close (int fd);
+int close (int fd) {
+    (void)fd;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Read N bytes into BUF from FD.  Return the number read, -1 for errors or 0 for EOF.*/
 long int read (int fd, void *buf, size_t n) {
@@ -96,25 +153,50 @@ long int write (int fd, const void *buf, size_t n){
 
 /* Clone the calling process, creating an exact copy.
    Return -1 for errors, 0 to the new process, and the process ID of the new process to the old process.  */
-int fork (void);
+int fork (void) {
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Create a one-way communication channel (pipe). If successful, two file descriptors are stored in PIPEDES;
    bytes written on PIPEDES[1] can be read from PIPEDES[0]. Returns 0 if successful, -1 if not.  */
-int pipe (int pipedes[2]);
+int pipe (int pipedes[2]) {
+    (void)pipedes;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 
 /* Make a symbolic link to FROM named TO.  */
-int symlink (const char *from, const char *to);
+int symlink (const char *from, const char *to) {
+    (void)from;
+    (void)to;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Get the process ID of the calling process.  */
-int getpid (void);
+int getpid (void) {
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 /* Get the process group ID of process PID.  */
-int getpgid (int pid);
+int getpgid (int pid) {
+    (void)pid;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 
 // TODO: The setup could be done using XML or some other way.
 /* These three declarations are used to read the values from the command line when initializing the fuzzer. */
-int getopt (int argc, char *const *argv, const char *shortopts);
+int getopt (int argc, char *const *argv, const char *shortopts) {
+    (void)argc;
+    (void)argv;
+    (void)shortopts;
+    NOT_IMPLEMENTED;
+    return 0;
+}
 char *optarg;
 int optind;
 

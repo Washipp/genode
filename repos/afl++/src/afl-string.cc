@@ -8,24 +8,26 @@
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
-/* Return the length of S.  */
 size_t strlen(const char *s) {
     return Genode::strlen(s);
 }
 
-/* Compare N bytes of S1 and S2.  */
+size_t strnlen(const char *s, size_t maxlen) {
+    size_t res = 0;
+    for (size_t i = 0; i < maxlen && s && *s; i++, s++, res++);
+    return res;
+}
+
 int memcmp(const void *s1, const void *s2, size_t n) {
     return Genode::memcmp(s1, s2, n);
 }
 
-/* Copy SRC to DEST.  */
 char *strcpy(char *__restrict dest, const char *__restrict src) {
     Genode::copy_cstring(dest, src, strlen(src) + 1);
 
     return dest;
 }
 
-/* Copy no more than N characters of SRC to DEST.  */
 char *strncpy(char *__restrict dest, const char *__restrict src, size_t _n) {
     if (_n == 0) return nullptr;
     while ((_n > 1UL) && *src)
@@ -33,13 +35,11 @@ char *strncpy(char *__restrict dest, const char *__restrict src, size_t _n) {
     return dest;
 }
 
-/* Return the length of the initial segment of S which consists entirely of characters not in charset.  */
 size_t strcspn(const char *s, const char *charset) {(void)s;(void)charset;
     NOT_IMPLEMENTED;
     return 0;
 }
 
-/* Find the first occurrence of NEEDLE in HAYSTACK.  */
 char *strstr(const char *haystack, const char *needle) {(void)haystack;(void)needle;
     NOT_IMPLEMENTED;
     return 0;
@@ -54,24 +54,20 @@ char *strcat(char *__restrict dest, const char *__restrict src) {
     return (save);
 }
 
-/* Return a string describing the meaning of the `errno' code in ERRNUM.  */
 char *strerror(int errnum) {
     static char ebuf[NL_TEXTMAX];
     snprintf(ebuf, NL_TEXTMAX, "Unknown error number: %d", errnum);
     return ebuf;
 }
 
-/* Compare N characters of S1 and S2.  */
 int strncmp(const char *s1, const char *s2, size_t n) {
     return Genode::strcmp(s1, s2, n);
 }
 
-/* Compare S1 and S2.  */
 int strcmp(const char *s1, const char *s2) {
     return Genode::strcmp(s1, s2);
 }
 
-/* Append no more than N characters from SRC onto DEST. (libc implementation)  */
 char *strncat(char *__restrict dst, const char *__restrict src, size_t n) {
     if (n != 0) {
         char *d = dst;
@@ -89,7 +85,6 @@ char *strncat(char *__restrict dst, const char *__restrict src, size_t n) {
     return (dst);
 }
 
-/* Copy N bytes of SRC to DEST, guaranteeing correct behavior for overlapping strings.  */
 void *memmove(void *dest, const void *src, size_t n) {
     return Genode::memmove(dest, src, n);
 }
@@ -149,7 +144,6 @@ char *strsep(char **__restrict stringp, const char *__restrict delim) {
     }
 }
 
-/* Duplicate S, returning an identical malloc'd string.  */
 char *strdup(const char *str) {(void)str;
     // TODO Implement malloc/port it somehow from malloc_free.cc
 //    size_t len;

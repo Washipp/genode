@@ -18,6 +18,9 @@
    OFLAG determines the type of access used.  If O_CREAT or O_TMPFILE is set
    in OFLAG, the third argument is taken as a `mode_t', the mode of the
    created file. */
-extern "C" int open (const char *__file, int __oflag, ...);
+extern "C" int open (const char *file, int oflag, ...);
+
+/* Do the file control operation described by CMD on FD. The remaining arguments are interpreted depending on CMD.*/
+extern "C" int fcntl (int fd, int cmd, ...);
 
 #endif //GENODE_AFL_FCNTL_H
