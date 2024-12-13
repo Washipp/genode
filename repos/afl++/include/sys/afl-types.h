@@ -54,7 +54,7 @@ typedef int __register_t;
 typedef int __segsz_t;        /* segment size (in pages) */
 typedef __SIZE_TYPE__ __size_t;        /* sizeof() */
 typedef __PTRDIFF_TYPE__ __ssize_t;        /* byte count or error */
-#if defined(__time_t)
+#if !defined(__time_t)
 typedef long long __time_t;        /* time()... */
 #endif
 
