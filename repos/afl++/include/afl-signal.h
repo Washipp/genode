@@ -59,23 +59,25 @@ struct sigaction
 
 typedef __sigset_t sigset_t;
 /* Clear all signals from SET.  */
-extern "C" int sigemptyset (sigset_t *__set);
+extern "C" int sigemptyset (sigset_t *set);
 
-extern "C" int sigaction(int __sig, const struct sigaction *__restrict __act,
-                    struct sigaction *__restrict __oact);
+extern "C" int sigaction(int sig, const struct sigaction *__restrict act, struct sigaction *__restrict oact);
 
 /* Set the handler for the signal SIG to HANDLER, returning the old
-   handler, or SIG_ERR on error. By default `signal' has the BSD semantic.  */
-extern "C" __sighandler_t signal (int __sig, __sighandler_t __handler);
+   handler, or SIG_ERR on error. By default, `signal` has the BSD semantic.  */
+extern "C" __sighandler_t signal (int sig, __sighandler_t handler);
 
 /* Send signal SIG to process number PID.  If PID is zero,
    send SIG to all processes in the current process's process group.
    If PID is < -1, send SIG to all processes in process group - PID.  */
-extern "C" int kill (int __pid, int __sig);
+extern "C" int kill (int pid, int sig);
 
 /* Send SIG to all processes in process group PGRP.
    If PGRP is zero, send SIG to all processes in
    the current process's process group.  */
-extern "C" int killpg (int __pgrp, int __sig);
+extern "C" int killpg (int pgrp, int sig);
+
+/* Raise signal SIG, i.e., send SIG to yourself.  */
+extern "C" int raise (int sig);
 
 #endif //GENODE_AFL_SIGNAL_H

@@ -14,13 +14,9 @@ typedef struct _IO_FILE FILE;
 #define SEEK_END    2    /* Seek from end of file.  */
 
 /* Standard streams.  */
-extern "C" FILE *stdin;        /* Standard input stream.  */
-extern "C" FILE *stdout;        /* Standard output stream.  */
-extern "C" FILE *stderr;        /* Standard error output stream.  */
-/* C89/C99 say they're macros.  Make them happy.  */
-#define stdin stdin
-#define stdout stdout
-#define stderr stderr
+extern "C" FILE *stdin;		/* Standard input stream.  */
+extern "C" FILE *stdout;		/* Standard output stream.  */
+extern "C" FILE *stderr;		/* Standard error output stream.  */
 
 
 /* Create a new stream that refers to an existing system file descriptor.  */
@@ -61,5 +57,8 @@ extern "C" FILE *fopen(const char *__restrict filename, const char *__restrict m
 
 /* Print a message describing the meaning of the value of errno. */
 extern "C" void perror (const char *s);
+
+/* Write chunks of generic data to STREAM. */
+extern "C" size_t fwrite (const void *__restrict ptr, size_t size, size_t n, FILE *__restrict s);
 
 #endif //GENODE_AFL_STDIO_H

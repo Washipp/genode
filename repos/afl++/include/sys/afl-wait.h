@@ -24,5 +24,5 @@
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern "C" __pid_t waitpid (__pid_t __pid, int *__stat_loc, int __options);
+extern "C" __pid_t waitpid (__pid_t pid, int *stat_loc, int options);
 #endif //GENODE_AFL_WAIT_H
