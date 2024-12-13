@@ -1,5 +1,0 @@
-
-#ifndef GENODE_AFL_ASSERT_H
-#define GENODE_AFL_ASSERT_H
-
-#endif //GENODE_AFL_ASSERT_H
