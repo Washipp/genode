@@ -50,12 +50,12 @@ int snprintf(char *__restrict s, size_t maxlen, const char *__restrict format, .
     return 0;
 }
 
-int sprintf(char *__restrict s, const char *__restrict format, ...) {
-    (void) s;
-    (void)format;
-    NOT_IMPLEMENTED;
-    return 0;
-}
+//int sprintf(char *__restrict s, const char *__restrict format, ...) {
+//    (void) s;
+//    (void)format;
+//    NOT_IMPLEMENTED;
+//    return 0;
+//}
 
 int sscanf(const char *__restrict s, const char *__restrict format, ...) {
     (void) s;

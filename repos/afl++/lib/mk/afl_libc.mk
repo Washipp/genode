@@ -2,6 +2,11 @@
 # It does not specify the variable TARGET.
 LIBS += base
 
-SRC_CC += $(notdir $(wildcard $(REP_DIR)/src/*.cc))
+IGNORE_FILES = afl-file-system.cc
+ALL_SRC_FILES = $(notdir $(wildcard $(REP_DIR)/src/afl_libc/*.cc))
 
-vpath %.cc $(REP_DIR)/src
+INC_DIR +=  $(REP_DIR)/include
+
+SRC_CC += $(filter-out $(IGNORE_FILES), $(ALL_SRC_FILES))
+
+vpath %.cc $(REP_DIR)/src/afl_libc
