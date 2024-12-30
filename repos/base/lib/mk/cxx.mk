@@ -84,7 +84,7 @@ KEEP_SYMBOLS += _ZTVSt16nested_exception
 # However, the mechanism in 'generic.mk' considers only the dependencies
 # for the compilation units contained in the 'OBJECTS' variable. For building
 # the cxx library, we rely on the 'CXX_OBJECTS' variable instead. So we need to
-# include the dependenies manually.
+# include the dependencies manually.
 #
 ifneq ($(filter-out $(MAKECMDGOALS),clean),)
 -include $(CXX_OBJECTS:.o=.d)
