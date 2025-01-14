@@ -50,15 +50,24 @@ struct shmid_ds
 #endif
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Get shared memory segment.  */
-extern "C" int shmget (int key, size_t size, int shmflg);
+int shmget(int key, size_t size, int shmflg);
 
 /* Shared memory control operation.  */
-extern "C" int shmctl (int shmid, int cmd, struct shmid_ds *buf);
+int shmctl(int shmid, int cmd, struct shmid_ds *buf);
 
 /* Attach shared memory segment.  */
-extern "C" void *shmat (int shmid, const void *shmaddr, int shmflg);
+void *shmat(int shmid, const void *shmaddr, int shmflg);
 
 /* Detach shared memory segment.  */
-extern "C" int shmdt (const void *shmaddr);
+int shmdt(const void *shmaddr);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //GENODE_AFL_SHM_H

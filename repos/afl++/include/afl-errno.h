@@ -36,9 +36,18 @@
 #define    ERANGE        34    /* Math result not representable */
 #define    EWOULDBLOCK   11    /* Operation would block */
 
-/* The error code set by various library functions.  */
-extern "C" int *__errno_location(void);
 // TODO: How to handle errno?
 # define errno (*__errno_location ())
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* The error code set by various library functions.  */
+int *__errno_location(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif //GENODE_AFL_ERRNO_H

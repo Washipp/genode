@@ -29,10 +29,18 @@ typedef long int __off_t;    /* Type of file sizes and offsets.  */
 #define MAP_PRIVATE    0x02  /* Changes are private.  */
 #define MAP_FAILED     ((void *) -1)
 
-extern "C" double log(double x);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern "C" double log2(double x);
+double log(double x);
 
-extern "C" double log10(double x);
+double log2(double x);
+
+double log10(double x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //GENODE_AFL_MATH_H

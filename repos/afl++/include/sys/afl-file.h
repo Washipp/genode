@@ -11,7 +11,15 @@ typedef struct _IO_FILE FILE;
 
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Apply or remove an advisory lock, according to OPERATION, on the file FD refers to.  */
-extern "C" int flock (int __fd, int __operation);
+int flock(int __fd, int __operation);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //GENODE_AFL_FILE_H

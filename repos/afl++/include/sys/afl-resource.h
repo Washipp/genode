@@ -15,14 +15,20 @@ struct rlimit
    Returns 0 if successful, -1 if not (and sets errno).  */
 typedef int __rlimit_resource_t;
 
-extern "C" int getrlimit(__rlimit_resource_t __resource, struct rlimit *__rlimits);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int getrlimit(__rlimit_resource_t __resource, struct rlimit *__rlimits);
 
 /* Set the soft and hard limits for RESOURCE to *RLIMITS.
    Only the super-user can increase hard limits.
    Return 0 if successful, -1 if not (and sets errno).  */
 
-extern "C" int setrlimit(__rlimit_resource_t __resource, const struct rlimit *__rlimits);
-
+int setrlimit(__rlimit_resource_t __resource, const struct rlimit *__rlimits);
+#ifdef __cplusplus
+}
+#endif
 
 enum __rlimit_resource
 {

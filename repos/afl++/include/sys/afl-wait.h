@@ -3,11 +3,14 @@
 
 #include "sys/afl-types.h"
 
-#define	WNOHANG		1	/* Don't block waiting.  */
 
 /* Waitflags */
-
+#define	WNOHANG		1	/* Don't block waiting.  */
 #define	WUNTRACED	2	/* Report status of stopped children.  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Wait for a child matching PID to die.
    If PID is greater than 0, match any process whose process ID is PID.
@@ -24,5 +27,10 @@
 
    This function is a cancellation point and therefore not marked with
    __THROW.  */
-extern "C" __pid_t waitpid (__pid_t pid, int *stat_loc, int options);
+__pid_t waitpid(__pid_t pid, int *stat_loc, int options);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //GENODE_AFL_WAIT_H

@@ -2,12 +2,18 @@
 #define GENODE_AFL_IOCTL_H
 #define TIOCGWINSZ	0x5413
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Perform the I/O control operation specified by REQUEST on FD.
    One argument may follow; its presence and type depend on REQUEST.
    Return value depends on REQUEST.  Usually -1 indicates error.  */
-extern "C" int ioctl (int __fd, unsigned long int __request, ...);
+int ioctl(int fd, unsigned long int request, ...);
 
-
+#ifdef __cplusplus
+}
+#endif
 struct winsize
 {
     unsigned short int ws_row;
