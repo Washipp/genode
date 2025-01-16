@@ -1,0 +1,4 @@
+#ifndef GENODE_ASSERT_H
+#define GENODE_ASSERT_H
+
+#endif //GENODE_ASSERT_H

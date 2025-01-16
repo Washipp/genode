@@ -1,0 +1,5 @@
+
+#ifndef GENODE_SEMAPHORE_H
+#define GENODE_SEMAPHORE_H
+
+#endif //GENODE_SEMAPHORE_H

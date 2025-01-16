@@ -1,0 +1,4 @@
+#ifndef GENODE_STRINGS_H
+#define GENODE_STRINGS_H
+
+#endif //GENODE_STRINGS_H
