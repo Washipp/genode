@@ -13,15 +13,14 @@ typedef struct _IO_FILE FILE;
 #define SEEK_SET    0    /* Seek from beginning of file.  */
 #define SEEK_END    2    /* Seek from end of file.  */
 
+/* Standard streams.  */
+extern FILE *stdin;        /* Standard input stream.  */
+extern FILE *stdout;       /* Standard output stream.  */
+extern FILE *stderr;       /* Standard error output stream.  */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Standard streams.  */
-FILE *stdin;        /* Standard input stream.  */
-FILE *stdout;        /* Standard output stream.  */
-FILE *stderr;        /* Standard error output stream.  */
-
 
 /* Create a new stream that refers to an existing system file descriptor.  */
 FILE *fdopen(int fd, const char *modes);

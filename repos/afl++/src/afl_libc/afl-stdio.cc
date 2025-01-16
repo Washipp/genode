@@ -1,9 +1,13 @@
 #include "afl-stdio.h"
+#include "sys/afl-null.h"
 #include <base/log.h>
 #include <base/sleep.h>
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
+FILE *stdin = NULL;  /* Initialize standard input stream. */
+FILE *stdout = NULL; /* Initialize standard output stream. */
+FILE *stderr = NULL; /* Initialize standard error stream. */
 
 FILE *fdopen(int fd, const char *modes) {
     (void) fd;
@@ -95,14 +99,14 @@ FILE *fopen(const char *__restrict filename, const char *__restrict modes) {
 }
 
 
-void perror (const char *s) {
+void perror(const char *s) {
     (void)s;
     NOT_IMPLEMENTED;
     Genode::sleep_forever();
 }
 
 /* Write chunks of generic data to STREAM. */
-size_t fwrite (const void *__restrict ptr, size_t size, size_t n, FILE *__restrict s) {
+size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restrict s) {
     (void)ptr;
     (void)size;
     (void)n;
