@@ -3,7 +3,6 @@
 #include "sys/afl-null.h"
 #include "afl-limits.h"
 #include "afl-errno.h"
-#include "xoroshiro.h"
 
 #include <base/log.h>
 #include <base/sleep.h>
@@ -408,10 +407,8 @@ unsigned long long int strtoull(const char *__restrict nptr, char **__restrict e
     return (acc);
 }
 
-#define SEED 12345678
-static Genode::Xoroshiro_128_plus xoroshiro = { SEED };
 long int random(void) {
-    return (long int)xoroshiro.value();
+    return 0;
 }
 
 /* Example implementation from POSIX.1-2001. */
