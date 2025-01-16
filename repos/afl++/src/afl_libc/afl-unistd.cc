@@ -197,8 +197,6 @@ int getopt (int argc, char *const *argv, const char *shortopts) {
     NOT_IMPLEMENTED;
     return 0;
 }
-char *optarg;
-int optind;
 
 /* Invoke `system call' number SYSNO, passing it the remaining arguments.
    This is completely system-dependent, and not often useful.
