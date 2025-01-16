@@ -35,7 +35,7 @@ void *calloc(size_t nmemb, size_t size) {
 
 void free(void *ptr) {
     (void)ptr;
-    Genode::log("free() called: ");
+    NOT_IMPLEMENTED;
 }
 
 void abort(void) {
