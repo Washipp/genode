@@ -4,10 +4,6 @@
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
-// FIXME: how to handle the differnt input/output streams?
-FILE *stdin = {};		/* Standard input stream.  */
-FILE *stdout= {};		/* Standard output stream.  */
-FILE *stderr= {};		/* Standard error output stream.  */
 
 FILE *fdopen(int fd, const char *modes) {
     (void) fd;
