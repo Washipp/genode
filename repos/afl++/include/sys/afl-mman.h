@@ -19,9 +19,9 @@ extern "C" {
 #endif
 /* Deallocate any mapping for the region starting at ADDR and extending LEN
    bytes.  Returns 0 if successful, -1 for errors (and sets errno).  */
-//int munmap (void *addr, size_t len);
-//
-//void *mmap (void *addr, size_t len, int prot, int flags, int fd, __off_t offset);
+int munmap (void *addr, size_t len) noexcept;
+
+void *mmap (void *addr, size_t len, int prot, int flags, int fd, __off_t offset) noexcept;
 
 #ifdef __cplusplus
 }
