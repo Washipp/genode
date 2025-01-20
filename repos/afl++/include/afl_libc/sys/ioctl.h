@@ -1,5 +1,5 @@
-#ifndef GENODE_IOCTL_H
-#define GENODE_IOCTL_H
+#ifndef AFL_IOCTL_H
+#define AFL_IOCTL_H
 #define TIOCGWINSZ	0x5413
 
 #ifdef __cplusplus
@@ -21,4 +21,4 @@ struct winsize
     unsigned short int ws_xpixel;
     unsigned short int ws_ypixel;
 };
-#endif //GENODE_IOCTL_H
+#endif //AFL_IOCTL_H

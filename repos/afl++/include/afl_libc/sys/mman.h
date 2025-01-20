@@ -1,5 +1,5 @@
-#ifndef GENODE_MMAN_H
-#define GENODE_MMAN_H
+#ifndef AFL_MMAN_H
+#define AFL_MMAN_H
 
 #include "stddef.h"
 //#include <linux_syscalls.h>
@@ -19,12 +19,12 @@ extern "C" {
 #endif
 /* Deallocate any mapping for the region starting at ADDR and extending LEN
    bytes.  Returns 0 if successful, -1 for errors (and sets errno).  */
-int munmap (void *addr, size_t len) noexcept;
+int munmap (void *addr, size_t len);
 
-void *mmap (void *addr, size_t len, int prot, int flags, int fd, __off_t offset) noexcept;
+void *mmap (void *addr, size_t len, int prot, int flags, int fd, __off_t offset);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //GENODE_MMAN_H
+#endif //AFL_MMAN_H

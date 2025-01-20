@@ -1,8 +1,8 @@
-#ifndef GENODE_SHM_H
-#define GENODE_SHM_H
+#ifndef AFL_SHM_H
+#define AFL_SHM_H
 
 #include "stddef.h"
-#include "types.h"
+#include "sys/types.h"
 
 typedef unsigned long int __syscall_ulong_t;
 
@@ -70,4 +70,4 @@ int shmdt(const void *shmaddr);
 }
 #endif
 
-#endif //GENODE_SHM_H
+#endif //AFL_SHM_H

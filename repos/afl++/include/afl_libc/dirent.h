@@ -1,5 +1,5 @@
-#ifndef GENODE_DIRENT_H
-#define GENODE_DIRENT_H
+#ifndef AFL_DIRENT_H
+#define AFL_DIRENT_H
 
 struct dirent {
 #ifndef __USE_FILE_OFFSET64
@@ -49,4 +49,4 @@ int alphasort(const struct dirent **e1, const struct dirent **e2);
 }
 #endif
 
-#endif //GENODE_DIRENT_H
+#endif //AFL_DIRENT_H

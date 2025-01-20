@@ -1,5 +1,5 @@
-#ifndef GENODE_RESOURCE_H
-#define GENODE_RESOURCE_H
+#ifndef AFL_RESOURCE_H
+#define AFL_RESOURCE_H
 typedef unsigned long int __rlim_t;
 typedef __rlim_t rlim_t;
 struct rlimit
@@ -14,21 +14,6 @@ struct rlimit
 /* Put the soft and hard limits for RESOURCE in *RLIMITS.
    Returns 0 if successful, -1 if not (and sets errno).  */
 typedef int __rlimit_resource_t;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int getrlimit(__rlimit_resource_t __resource, struct rlimit *__rlimits);
-
-/* Set the soft and hard limits for RESOURCE to *RLIMITS.
-   Only the super-user can increase hard limits.
-   Return 0 if successful, -1 if not (and sets errno).  */
-
-int setrlimit(__rlimit_resource_t __resource, const struct rlimit *__rlimits);
-#ifdef __cplusplus
-}
-#endif
 
 enum __rlimit_resource
 {
@@ -118,4 +103,19 @@ enum __rlimit_resource
 //   and put it in *USAGE.  Returns 0 for success, -1 for failure.  */
 //extern "C" int getrusage (__rusage_who_t __who, struct rusage *__usage);
 
-#endif //GENODE_RESOURCE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int getrlimit(__rlimit_resource_t __resource, struct rlimit *__rlimits);
+
+/* Set the soft and hard limits for RESOURCE to *RLIMITS.
+   Only the super-user can increase hard limits.
+   Return 0 if successful, -1 if not (and sets errno).  */
+
+int setrlimit(__rlimit_resource_t __resource, const struct rlimit *__rlimits);
+#ifdef __cplusplus
+}
+#endif
+
+#endif //AFL_RESOURCE_H

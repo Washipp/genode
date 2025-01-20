@@ -8,10 +8,12 @@ typedef unsigned long u_long;
 
 #if !(defined (__GNUG__) && defined (size_t))
 typedef __SIZE_TYPE__ size_t;
-#ifdef __BEOS__
-typedef long ssize_t;
-#endif /* __BEOS__ */
 #endif /* !(defined (__GNUG__) && defined (size_t)) */
 
+
+#ifndef __ssize_t_defined
+typedef long int ssize_t;
+# define __ssize_t_defined
+#endif
 
 #endif //GENODE_STDDEF_H

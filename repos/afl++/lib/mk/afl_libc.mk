@@ -5,7 +5,7 @@ LIBS += base syscall-linux
 IGNORE_FILES = afl-file-system.cc
 ALL_SRC_FILES = $(notdir $(wildcard $(REP_DIR)/src/afl_libc/*.cc))
 
-INC_DIR +=  $(REP_DIR)/include
+INC_DIR +=  $(REP_DIR)/include/afl_libc
 
 SRC_CC += $(filter-out $(IGNORE_FILES), $(ALL_SRC_FILES))
 

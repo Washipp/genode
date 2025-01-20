@@ -1,5 +1,5 @@
 #ifndef GENODE_SELECT_H
-#define GENODE_SELECT_H
+#define GENODE_AFL_SELECT_H
 
 /* Number of descriptors that can fit in an `fd_set'.  */
 #define __FD_SETSIZE        1024

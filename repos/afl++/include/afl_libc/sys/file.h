@@ -1,5 +1,5 @@
-#ifndef GENODE_FILE_H
-#define GENODE_FILE_H
+#ifndef AFL_FILE_H
+#define AFL_FILE_H
 
 #ifndef __FILE_defined
 #define __FILE_defined 1
@@ -22,4 +22,4 @@ int flock(int __fd, int __operation);
 }
 #endif
 
-#endif //GENODE_FILE_H
+#endif //AFL_FILE_H

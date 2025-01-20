@@ -1,5 +1,5 @@
-#ifndef GENODE_IPC_H
-#define GENODE_IPC_H
+#ifndef AFL_IPC_H
+#define AFL_IPC_H
 
 /* Mode bits for `msgget', `semget', and `shmget'.  */
 #define IPC_CREAT	01000		/* Create key if key does not exist. */
@@ -13,4 +13,4 @@
 
 /* Special key values.  */
 #define IPC_PRIVATE	((int) 0)	/* Private key.  */
-#endif //GENODE_IPC_H
+#endif //AFL_IPC_H

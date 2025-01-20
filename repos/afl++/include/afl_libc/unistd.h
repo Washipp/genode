@@ -109,9 +109,6 @@ int getpgid(int pid);
 /* These three declarations are used to read the values from the command line when initializing the fuzzer. */
 int getopt(int argc, char *const *argv, const char *shortopts);
 
-char *optarg;
-int optind;
-
 /* Invoke `system call' number SYSNO, passing it the remaining arguments.
    This is completely system-dependent, and not often useful.
 
