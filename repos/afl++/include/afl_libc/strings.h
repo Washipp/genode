@@ -1,4 +1,4 @@
-#ifndef GENODE_STRINGS_H
-#define GENODE_STRINGS_H
+#ifndef AFL_STRINGS_H
+#define AFL_STRINGS_H
 
-#endif //GENODE_STRINGS_H
+#endif //AFL_STRINGS_H

@@ -1,5 +1,5 @@
-#ifndef GENODE_FCNTL_H
-#define GENODE_FCNTL_H
+#ifndef AFL_FCNTL_H
+#define AFL_FCNTL_H
 
 #define O_RDONLY	     00
 #define O_WRONLY	     01
@@ -31,4 +31,4 @@ int fcntl(int fd, int cmd, ...);
 }
 #endif
 
-#endif //GENODE_FCNTL_H
+#endif //AFL_FCNTL_H

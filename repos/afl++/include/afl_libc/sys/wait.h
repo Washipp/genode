@@ -1,5 +1,5 @@
-#ifndef GENODE_WAIT_H
-#define GENODE_WAIT_H
+#ifndef AFL_WAIT_H
+#define AFL_WAIT_H
 
 #include "sys/types.h"
 
@@ -33,4 +33,4 @@ __pid_t waitpid(__pid_t pid, int *stat_loc, int options);
 }
 #endif
 
-#endif //GENODE_WAIT_H
+#endif //AFL_WAIT_H

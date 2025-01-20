@@ -1,5 +1,5 @@
-#ifndef GENODE_MATH_H
-#define GENODE_MATH_H
+#ifndef AFL_MATH_H
+#define AFL_MATH_H
 
 
 # define isinf(x) __builtin_isinf_sign (x)
@@ -43,4 +43,4 @@ double log10(double x);
 }
 #endif
 
-#endif //GENODE_MATH_H
+#endif //AFL_MATH_H

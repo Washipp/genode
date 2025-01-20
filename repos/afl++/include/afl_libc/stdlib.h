@@ -1,5 +1,5 @@
-#ifndef GENODE_STDLIB_H
-#define GENODE_STDLIB_H
+#ifndef AFL_STDLIB_H
+#define AFL_STDLIB_H
 
 #include "stddef.h"
 
@@ -89,4 +89,4 @@ int rand(void);
 }
 #endif
     
-#endif //GENODE_STDLIB_H
+#endif //AFL_STDLIB_H

@@ -1,5 +1,5 @@
-#ifndef GENODE_STAT_H
-#define GENODE_STAT_H
+#ifndef AFL_STAT_H
+#define AFL_STAT_H
 
 #include "struct-stat.h"
 
@@ -31,4 +31,4 @@ int mkdir(const char *path, unsigned int mode);
 }
 #endif
 
-#endif //GENODE_STAT_H
+#endif //AFL_STAT_H

@@ -1,5 +1,5 @@
-#ifndef GENODE_STRUCT_STAT_H
-#define GENODE_STRUCT_STAT_H
+#ifndef AFL_STRUCT_STAT_H
+#define AFL_STRUCT_STAT_H
 struct stat
 {
 #ifdef __USE_TIME64_REDIRECTS
@@ -75,4 +75,4 @@ struct stat
 #endif /* __USE_TIME64_REDIRECTS  */
 };
 
-#endif //GENODE_STRUCT_STAT_H
+#endif //AFL_STRUCT_STAT_H

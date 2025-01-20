@@ -1,5 +1,5 @@
-#ifndef GENODE_LIMITS_H
-#define GENODE_LIMITS_H
+#ifndef AFL_LIMITS_H
+#define AFL_LIMITS_H
 
 #define PATH_MAX        4096	/* # chars in a path name including nul */
 #define	NL_TEXTMAX		2048
@@ -31,4 +31,4 @@
 #define INT_MAX __INT_MAX__
 #define UINT_MAX (INT_MAX * 2U + 1U)
 
-#endif //GENODE_LIMITS_H
+#endif //AFL_LIMITS_H

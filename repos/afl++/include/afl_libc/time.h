@@ -1,5 +1,5 @@
-#ifndef GENODE_TIME_H
-#define GENODE_TIME_H
+#ifndef AFL_TIME_H
+#define AFL_TIME_H
 
 #include "sys/select.h"
 
@@ -51,4 +51,4 @@ struct tm *localtime(const time_t *__timer);
 }
 #endif
 
-#endif //GENODE_TIME_H
+#endif //AFL_TIME_H

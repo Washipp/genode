@@ -1,5 +1,5 @@
-#ifndef GENODE_STDALIGN_H
-#define GENODE_STDALIGN_H
+#ifndef AFL_STDALIGN_H
+#define AFL_STDALIGN_H
 
 /**
  * Used by xxhash.h
@@ -15,4 +15,4 @@
 #define __alignof_is_defined 1
 #endif /* __STDC_VERSION__ */
 
-#endif //GENODE_STDALIGN_H
+#endif //AFL_STDALIGN_H

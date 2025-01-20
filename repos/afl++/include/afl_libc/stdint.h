@@ -1,5 +1,5 @@
-#ifndef GENODE_STDINT_H
-#define GENODE_STDINT_H
+#ifndef AFL_STDINT_H
+#define AFL_STDINT_H
 
 #include "sys/types.h"
 
@@ -18,5 +18,5 @@ typedef __int16_t int16_t;
 typedef __int32_t int32_t;
 typedef __int64_t int64_t;
 
-#endif //GENODE_STDINT_H
+#endif //AFL_STDINT_H
 

@@ -1,5 +1,5 @@
-#ifndef GENODE_SIGNAL_H
-#define GENODE_SIGNAL_H
+#ifndef AFL_SIGNAL_H
+#define AFL_SIGNAL_H
 
 /* ISO C99 signals.  */
 #define	SIGINT		2	/* Interactive attention signal.  */
@@ -89,4 +89,4 @@ int raise(int sig);
 }
 #endif
 
-#endif //GENODE_SIGNAL_H
+#endif //AFL_SIGNAL_H

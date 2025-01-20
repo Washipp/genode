@@ -1,5 +1,5 @@
-#ifndef GENODE_STRING_H
-#define GENODE_STRING_H
+#ifndef AFL_STRING_H
+#define AFL_STRING_H
 
 #include "stddef.h"
 
@@ -70,4 +70,4 @@ void *memset(void *a, int b, size_t c);
 }
 #endif
 
-#endif //GENODE_STRING_H
+#endif //AFL_STRING_H

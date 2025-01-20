@@ -1,5 +1,5 @@
-#ifndef GENODE_STDIO_H
-#define GENODE_STDIO_H
+#ifndef AFL_STDIO_H
+#define AFL_STDIO_H
 
 #include "sys/null.h"
 #include "stddef.h"
@@ -68,4 +68,4 @@ size_t fwrite(const void *__restrict ptr, size_t size, size_t n, FILE *__restric
 }
 #endif
 
-#endif //GENODE_STDIO_H
+#endif //AFL_STDIO_H

@@ -1,5 +1,5 @@
-#ifndef GENODE_CTYPE_H
-#define GENODE_CTYPE_H
+#ifndef AFL_CTYPE_H
+#define AFL_CTYPE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,4 @@ int isalnum(int c);
 }
 #endif
 
-#endif //GENODE_CTYPE_H
+#endif //AFL_CTYPE_H

@@ -1,5 +1,5 @@
-#ifndef GENODE_UNISTD_H
-#define GENODE_UNISTD_H
+#ifndef AFL_UNISTD_H
+#define AFL_UNISTD_H
 
 #include "stddef.h"
 
@@ -131,4 +131,4 @@ void _exit(int status) __attribute__ ((__noreturn__));
 }
 #endif
 
-#endif //GENODE_UNISTD_H
+#endif //AFL_UNISTD_H

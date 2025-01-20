@@ -3,8 +3,8 @@
  * The reason is, that cxx depends on the used compiler (afl-gcc-fast).
  * It expects additional functions, which are defined here and a stub has been implemented.
  */
-#ifndef GENODE_PTHREAD_H
-#define GENODE_PTHREAD_H
+#ifndef AFL_PTHREAD_H
+#define AFL_PTHREAD_H
 
 struct pthread_mutex_t {};
 struct dl_find_object {};
@@ -23,4 +23,4 @@ int _dl_find_object(void *address, struct dl_find_object *result);
 }
 #endif
 
-#endif //GENODE_PTHREAD_H
+#endif //AFL_PTHREAD_H

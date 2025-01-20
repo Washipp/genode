@@ -1,4 +1,4 @@
-#ifndef GENODE_AFL_LIST_H
-#define GENODE_AFL_LIST_H
+#ifndef AFL_LIST_H
+#define AFL_LIST_H
 
-#endif //GENODE_AFL_LIST_H
+#endif //AFL_LIST_H

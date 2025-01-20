@@ -1,5 +1,5 @@
-#ifndef GENODE_ERRNO_H
-#define GENODE_ERRNO_H
+#ifndef AFL_ERRNO_H
+#define AFL_ERRNO_H
 #define    EPERM         1    /* Operation not permitted */
 #define    ENOENT        2    /* No such file or directory */
 #define    ESRCH         3    /* No such process */
@@ -50,4 +50,4 @@ int *__errno_location(void);
 #endif
 
 
-#endif //GENODE_ERRNO_H
+#endif //AFL_ERRNO_H

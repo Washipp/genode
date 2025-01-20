@@ -1,5 +1,5 @@
-#ifndef GENODE_SELECT_H
-#define GENODE_AFL_SELECT_H
+#ifndef AFL_SELECT_H
+#define AFL_SELECT_H
 
 /* Number of descriptors that can fit in an `fd_set'.  */
 #define __FD_SETSIZE        1024
@@ -72,4 +72,4 @@ int select(int nfds, fd_set *__restrict readfds,
 #ifdef __cplusplus
 }
 #endif
-#endif //GENODE_SELECT_H
+#endif //AFL_SELECT_H

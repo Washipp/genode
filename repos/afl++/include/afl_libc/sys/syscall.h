@@ -1,5 +1,5 @@
-#ifndef GENODE_SYSCALL_H
-#define GENODE_SYSCALL_H
+#ifndef AFL_SYSCALL_H
+#define AFL_SYSCALL_H
 
 /* FIX ME From confname.h The value 8 is chosen arbitrarily */
 #ifndef _SC_RTSIG_MAX
@@ -17,4 +17,4 @@
 # define SYS_write __NR_write
 #endif
 
-#endif //GENODE_SYSCALL_H
+#endif //AFL_SYSCALL_H

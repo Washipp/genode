@@ -1,5 +1,5 @@
-#ifndef GENODE_STDDEF_H
-#define GENODE_STDDEF_H
+#ifndef AFL_STDDEF_H
+#define AFL_STDDEF_H
 
 typedef long int __off_t;    /* Type of file sizes and offsets.  */
 typedef unsigned long u_long;
@@ -16,4 +16,4 @@ typedef long int ssize_t;
 # define __ssize_t_defined
 #endif
 
-#endif //GENODE_STDDEF_H
+#endif //AFL_STDDEF_H

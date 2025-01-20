@@ -1,4 +1,4 @@
-#ifndef GENODE_DLFCN_H
-#define GENODE_DLFCN_H
+#ifndef AFL_DLFCN_H
+#define AFL_DLFCN_H
 
-#endif //GENODE_DLFCN_H
+#endif //AFL_DLFCN_H
