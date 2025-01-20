@@ -1,15 +1,13 @@
 TARGET = afl-fuzz
-LIBS += base
+LIBS += base afl_libc
 SRC_CC += main.cc
 
 # AFL++_DIR = contrib/afl++-<hash>/
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
 
 # $(PRG_DIR) = repos/ports/src/app/afl++/afl-fuzz
-INC_DIR += $(PRG_DIR)
-INC_DIR += $(PRG_DIR)/../libc/include
+INC_DIR += $(REP_DIR)/include/afl_libc
 INC_DIR += $(AFL++_DIR)/include
-INC_DIR += $(AFL++_DIR)/instrumentation
 
 # ---------------
 # Rules to create `afl-fuzz`
@@ -51,7 +49,6 @@ CC_OPT += -lm
 
 # Unneeded fuzz files. They contain extra functionality that we do not care about.
 FILTER = $(AFL++_DIR)/src/afl-fuzz-statsd.c $(AFL++_DIR)/src/afl-fuzz-python.c $(AFL++_DIR)/src/afl-fuzz-statsd.c
-#SRC_C += $(filter-out $(FILTER),$(AFL_FUZZ_FILES))
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz.c)
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-bitmap.c) # worked, probably not necessary
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-cmplog.c) # compiled
@@ -61,7 +58,7 @@ SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-init.c) # compiled, necessary
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-one.c) # compiled
 #SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-python.c) # does not matter, we dont care about python implementation
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-queue.c) # compiled
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-redqueen.c) # compiled
+SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-redqueen.c) # compiled, probably unnecessary
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-run.c) # compiled
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-skipdet.c) # compiled
 SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-state.c) # necessary
@@ -69,3 +66,10 @@ SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-stats.c) # necessary, skipped for no
 #SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-statsd.c) # not needed
 
 vpath %.c $(AFL++_DIR)/src
+
+
+SRC_CC += $(notdir $(wildcard $(PRG_DIR)/../libc/src/*.cc))
+SRC_CC += $(notdir $(wildcard $(PRG_DIR)/../libc/*.cc))
+
+vpath %.cc $(PRG_DIR)/../libc/src
+vpath %.cc $(PRG_DIR)/../libc
