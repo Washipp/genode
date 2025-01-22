@@ -1,9 +1,11 @@
+/* afl_libc includes */
 #include "stdlib.h"
 #include "ctype.h"
 #include "sys/null.h"
 #include "limits.h"
 #include "errno.h"
 
+/* Genode includes */
 #include <base/log.h>
 #include <base/sleep.h>
 
@@ -11,31 +13,6 @@
 
 #define RAND_MAD 32767
 static unsigned long next = 1;
-
-void *realloc(void *ptr, size_t size) {
-    (void)ptr;
-    (void)size;
-    NOT_IMPLEMENTED;
-    return nullptr;
-}
-
-void *malloc(size_t size) {
-    (void)size;
-    NOT_IMPLEMENTED;
-    return nullptr;
-}
-
-void *calloc(size_t nmemb, size_t size) {
-    (void)nmemb;
-    (void)size;
-    NOT_IMPLEMENTED;
-    return nullptr;
-}
-
-void free(void *ptr) {
-    (void)ptr;
-    NOT_IMPLEMENTED;
-}
 
 void abort(void) {
     NOT_IMPLEMENTED;
@@ -51,23 +28,6 @@ void exit(int status) {
 int atexit(void (*func)(void)) {
     (void)func;
     NOT_IMPLEMENTED;
-    return 0;
-}
-
-char *getenv(const char *name) {
-    Genode::log("getenv called: ", name);
-    return nullptr;
-}
-
-int setenv(const char *name, const char *value, int replace) {
-    (void)value;
-    (void)replace;
-    Genode::log("setenv called: name:", name);
-    return 0;
-}
-
-int unsetenv(const char *name){
-    Genode::log("unsetenv called: name:", name);
     return 0;
 }
 

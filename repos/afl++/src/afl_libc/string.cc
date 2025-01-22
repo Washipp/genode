@@ -1,16 +1,20 @@
+/*  AFL libc imports */
 #include "string.h"
 #include "stddef.h"
+#include "stdlib.h"
 #include "limits.h"
 #include "stdio.h"
 #include "sys/null.h"
+
+/* Genode Imports */
 #include <util/string.h>
 #include <base/log.h>
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
-//size_t strlen(const char *s) {
-//    return Genode::strlen(s);
-//}
+size_t strlen(const char *s) {
+    return Genode::strlen(s);
+}
 
 size_t strnlen(const char *s, size_t maxlen) {
     size_t res = 0;
@@ -65,9 +69,9 @@ char *strerror(int errnum) {
 //    return Genode::strcmp(s1, s2, n);
 //}
 
-//int strcmp(const char *s1, const char *s2) {
-//    return Genode::strcmp(s1, s2);
-//}
+int strcmp(const char *s1, const char *s2) {
+    return Genode::strcmp(s1, s2);
+}
 
 char *strncat(char *__restrict dst, const char *__restrict src, size_t n) {
     if (n != 0) {
@@ -92,17 +96,17 @@ void *memmove(void *dest, const void *src, size_t n) {
 
 ///* Find the first occurrence of CH in P. (libc implementation)
 // * Else, see libc.cc form the gcov implementation. */
-//char *strchr(const char *p, int ch){
-//    char c;
-//
-//    c = (char)ch;
-//    for (;; ++p) {
-//        if (*p == c)
-//            return ((char *)p);
-//        if (*p == '\0')
-//            return (NULL);
-//    }
-//}
+char *strchr(const char *p, int ch){
+    char c;
+
+    c = (char)ch;
+    for (;; ++p) {
+        if (*p == c)
+            return ((char *)p);
+        if (*p == '\0')
+            return (NULL);
+    }
+}
 
 /* Find the last occurrence of CH in P. (libc implementation) */
 char *strrchr(const char *p, int ch) {
@@ -145,18 +149,15 @@ char *strsep(char **__restrict stringp, const char *__restrict delim) {
     }
 }
 
-char *strdup(const char *str) {(void)str;
-    // TODO Implement malloc/port it somehow from malloc_free.cc
-//    size_t len;
-//    char *copy;
-//
-//    len = strlen(str) + 1;
-//    if ((copy = malloc(len)) == NULL)
-//        return (NULL);
-//    Genode::memcpy(copy, str, len);
-//    return (copy);
-    NOT_IMPLEMENTED;
-    return nullptr;
+char *strdup(const char *str) {
+    size_t len;
+    char *copy;
+
+    len = strlen(str) + 1;
+    if ((copy = (char *) malloc(len)) == NULL)
+        return NULL;
+    memcpy(copy, str, len);
+    return (copy);
 }
 
 /* Search N bytes of S for C. (libc implementation) */
