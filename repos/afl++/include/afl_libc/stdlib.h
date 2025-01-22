@@ -27,17 +27,28 @@
 extern "C" {
 #endif
 
+/* Re-allocate the previously allocated block
+in PTR, making the new block SIZE bytes long.  */
+/* __attribute_malloc__ is not used, because if realloc returns
+   the same pointer that was passed to it, aliasing needs to be allowed
+   between objects pointed by the old and new pointers.  */
 void *realloc(void *ptr, size_t size);
 
+/* Allocate SIZE bytes of memory.  */
 void *malloc(size_t size);
 
 /* Allocate NMEMB elements of SIZE bytes each, all initialized to 0.  */
 void *calloc(size_t nmemb, size_t size);
 
+/* Free a block allocated by `malloc', `realloc' or `calloc'.  */
 void free(void *ptr);
 
+/* Abort execution and generate a core-dump.  */
 void abort(void);
 
+/* Call all functions registered with `atexit' and `on_exit',
+   in the reverse of the order in which they were registered,
+   perform stdio cleanup, and terminate program execution with STATUS.  */
 void exit(int _status);
 
 /* Register a function to be called when `exit` is called.  */
