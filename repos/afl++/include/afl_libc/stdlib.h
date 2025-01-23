@@ -2,7 +2,6 @@
 #define AFL_STDLIB_H
 
 #include "stddef.h"
-#include <base/allocator.h>
 
 /* Nonzero if STATUS indicates termination by a signal.  */
 #ifndef WIFSIGNALED
@@ -28,10 +27,6 @@
 extern "C" {
 #endif
 
-/**
- * Initialize malloc/free
- */
-void afl_libc_init(Genode::Allocator &);
 
 /* Re-allocate the previously allocated block
 in PTR, making the new block SIZE bytes long. */

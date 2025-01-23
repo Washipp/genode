@@ -3,10 +3,6 @@
 #include "sys/null.h"
 #include "string.h"
 
-
-/* Genode includes */
-#include <base/log.h>
-
 typedef struct {
     char *name;
     char *value;

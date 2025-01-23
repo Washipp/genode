@@ -1,6 +1,7 @@
 /* afl_libc includes */
 #include "stdlib.h"
 #include "string.h"
+#include "init.h"
 
 /* Genode includes */
 #include <base/allocator.h>
