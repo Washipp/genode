@@ -58,25 +58,33 @@ int unsetenv(const char *name){
             free(afl_env[i].name);
             free(afl_env[i].value);
 
-            // Shift elements down to fill the removed spot
             for (int j = i; j < env_count - 1; j++) {
                 afl_env[j] = afl_env[j + 1];
             }
 
             env_count--;
 
-            // Resize the array to reclaim unused memory
             if (env_count > 0) {
                 afl_env = (EnvVar *) realloc(afl_env, env_count * sizeof(EnvVar));
-                if (afl_env == NULL && env_count > 0) {
-                    return -1;  // realloc failure
+                if (afl_env == NULL) {
+                    return -1;
                 }
             } else {
-                free(afl_env);  // If no variables left, free array
+                free(afl_env);
                 afl_env = NULL;
             }
-            return 0;  // Successfully removed
+            return 0;
         }
     }
-    return -1;  // Variable not found
+    return -1;
+}
+
+int clear_all_env_vars() {
+    for (int i = 0; i < env_count; i++) {
+        free(afl_env[i].name);
+        free(afl_env[i].value);
+    }
+    free(afl_env);
+    afl_env = NULL;
+    return 0;
 }

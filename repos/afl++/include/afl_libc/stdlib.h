@@ -78,6 +78,9 @@ int setenv(const char *name, const char *value, int replace);
 /* Remove the variable NAME from the environment.  */
 int unsetenv(const char *name);
 
+/* Frees up all used environment variables. */
+int clear_all_env_vars();
+
 /* Convert a string to an integer.  */
 int atoi(const char *nptr);
 
