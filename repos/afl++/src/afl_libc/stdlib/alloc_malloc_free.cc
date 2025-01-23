@@ -62,5 +62,5 @@ void free(void *ptr)
 
 void *realloc(void *ptr, size_t size) {
     void * new_block = malloc(size);
-    return memcpy(ptr, new_block, size);
+    return memcpy(new_block, ptr, size);
 }
