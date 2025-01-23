@@ -27,11 +27,10 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 }
 
 
-//char *strcpy(char *__restrict dest, const char *__restrict src) {
-//    Genode::copy_cstring(dest, src, strlen(src) + 1);
-//
-//    return dest;
-//}
+char *strcpy(char *__restrict dest, const char *__restrict src) {
+    Genode::copy_cstring(dest, src, strlen(src) + 1);
+    return dest;
+}
 
 char *strncpy(char *__restrict dest, const char *__restrict src, size_t _n) {
     if (_n == 0) return nullptr;
@@ -50,14 +49,14 @@ char *strstr(const char *haystack, const char *needle) {(void)haystack;(void)nee
     return 0;
 }
 
-///* Append SRC onto DEST. (libc implementation)  */
-//char *strcat(char *__restrict dest, const char *__restrict src) {
-//    char *save = dest;
-//
-//    for (; *dest; ++dest);
-//    while ((*dest++ = *src++));
-//    return (save);
-//}
+/* Append SRC onto DEST. (libc implementation)  */
+char *strcat(char *__restrict dest, const char *__restrict src) {
+    char *save = dest;
+
+    for (; *dest; ++dest);
+    while ((*dest++ = *src++));
+    return (save);
+}
 
 char *strerror(int errnum) {
     static char ebuf[NL_TEXTMAX];
@@ -65,9 +64,9 @@ char *strerror(int errnum) {
     return ebuf;
 }
 
-//int strncmp(const char *s1, const char *s2, size_t n) {
-//    return Genode::strcmp(s1, s2, n);
-//}
+int strncmp(const char *s1, const char *s2, size_t n) {
+    return Genode::strcmp(s1, s2, n);
+}
 
 int strcmp(const char *s1, const char *s2) {
     return Genode::strcmp(s1, s2);
@@ -94,8 +93,8 @@ void *memmove(void *dest, const void *src, size_t n) {
     return Genode::memmove(dest, src, n);
 }
 
-///* Find the first occurrence of CH in P. (libc implementation)
-// * Else, see libc.cc form the gcov implementation. */
+/* Find the first occurrence of CH in P. (libc implementation)
+ * Else, see libc.cc form the gcov implementation. */
 char *strchr(const char *p, int ch){
     char c;
 
