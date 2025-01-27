@@ -9,7 +9,7 @@
 #include <base/log.h>
 #include <base/sleep.h>
 
-#define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
+#define NOT_IMPLEMENTED Genode::log("'",__func__, "()' not implemented")
 
 #define RAND_MAD 32767
 static unsigned long next = 1;

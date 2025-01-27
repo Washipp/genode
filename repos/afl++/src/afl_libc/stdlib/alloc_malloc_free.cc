@@ -8,8 +8,6 @@
 #include <util/string.h>
 #include <base/exception.h>
 
-#define NOT_IMPLEMENTED Genode::log("'",__func__, "()' not implemented")
-
 struct Allocator_not_Initialized : Genode::Exception { };
 static Genode::Allocator *alloc_ptr;
 static Genode::Allocator &alloc()
