@@ -8,10 +8,16 @@
 #define AFL_INIT_H
 
 #include <base/allocator.h>
+#include <base/env.h>
 
 /**
  * Initialize the allocator for malloc/free
  */
 void afl_libc_init(Genode::Allocator &);
+
+/**
+ * Initialize the file system.
+ */
+void afl_fs_env_init(Genode::Env &env);
 
 #endif //AFL_INIT_H

@@ -19,15 +19,16 @@
 
 #define SIGUSR1		10	/* User-defined signal 1.  */
 #define SIGWINCH	28	/* Window size change (4.3 BSD, Sun).  */
-#define	SIG_IGN	 ((__sighandler_t)  1)	/* Ignore signal.  */
+#define	SIG_IGN	    ((__sighandler_t) 1)	 /* Ignore signal.  */
 
-#define SIG_DFL ((__sighandler_t)0) /* Default action.  */
+#define SIG_DFL     ((__sighandler_t) 0)     /* Default action.  */
 #define	SIGKILL		9	/* Killed.  */
-#define SIGCHLD 17                  /* Child terminated or stopped.  */
-#define SIGTERM 15                  /* Termination request.  */
+#define SIGCHLD     17  /* Child terminated or stopped.  */
+#define SIGTERM     15  /* Termination request.  */
 #define SIGCONT		18	/* Continue.  */
 #define SIGSTOP		19	/* Stop, unblockable.  */
 #define SIGTSTP		20	/* Keyboard stop.  */
+#define NSIG        32  /* Number of Signals.  */
 
 
 #if !defined(__sigset_t)
