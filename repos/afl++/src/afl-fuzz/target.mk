@@ -1,75 +1,32 @@
 TARGET = afl-fuzz
-LIBS += base afl_libc
 SRC_CC += main.cc
+LIBS += base libc
 
-# AFL++_DIR = contrib/afl++-<hash>/
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
-
-# $(PRG_DIR) = repos/ports/src/app/afl++/afl-fuzz
-INC_DIR += $(REP_DIR)/include/afl_libc
 INC_DIR += $(AFL++_DIR)/include
 
-# ---------------
-# Rules to create `afl-fuzz`
-# ---------------
-CC_C_OPT += -Wno-pointer-sign
+PREFIX      ?= /usr/local
+BIN_PATH     = $(PREFIX)/bin
+DOC_PATH     = $(PREFIX)/share/doc/afl
+
+CC_C_OPT += -DBIN_PATH=\"$(BIN_PATH)\" -DDOC_PATH=\"$(DOC_PATH)\"
+
+# The following libs have also been included. We leave them for now
+#  -ldl -lrt -lm -lz -lm
+CC_C_OPT += -Wno-format-truncation -g -Wno-pointer-sign -Wno-variadic-macros -Wall -Wextra -Wno-pointer-arith -fPIC
 
 # This variable can improve the speed of the fuzzer depending on the fuzzer. (for example add AVX2 support)
 # We leave it empty for now.
-SPECIAL_PERFORMANCE =
+SPECIAL_PERFORMANCE = #-DHAVE_ZLIB
 
-# These files are already in the inc-dir
-# COMM_HDR = include/alloc_inl.h include/config.h include/debug.h include/types.h
-
-AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
-
-#src/afl-performance.o : $(COMM_HDR) src/afl-performance.c include/hash.h
-#	$(CC) $(CFLAGS) $(CFLAGS_OPT) $(SPECIAL_PERFORMANCE) -Iinclude -c src/afl-performance.c -o src/afl-performance.o
-# We set this flag for the xxh implementation.
-#CC_OPT += -DXXH_NO_STDLIB
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-performance.c)
-
-#src/afl-common.o : $(COMM_HDR) src/afl-common.c include/common.h
-#	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(SPECIAL_PERFORMANCE) -c src/afl-common.c -o src/afl-common.o
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-common.c)
-
-#src/afl-forkserver.o : $(COMM_HDR) src/afl-forkserver.c include/forkserver.h
-#	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(SPECIAL_PERFORMANCE) -c src/afl-forkserver.c -o src/afl-forkserver.o
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-forkserver.c)
-
-#src/afl-sharedmem.o : $(COMM_HDR) src/afl-sharedmem.c include/sharedmem.h
-#	$(CC) $(CFLAGS) $(CFLAGS_FLTO) $(SPECIAL_PERFORMANCE) -c src/afl-sharedmem.c -o src/afl-sharedmem.o
-# We probably need to rewrite this entire file.
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-sharedmem.c)
-
-
-#afl-fuzz: $(COMM_HDR) include/afl-fuzz.h $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o src/afl-performance.o
-#	$(CC) $(CFLAGS) $(COMPILE_STATIC) $(CFLAGS_FLTO) $(SPECIAL_PERFORMANCE) $(AFL_FUZZ_FILES) src/afl-common.o src/afl-sharedmem.o src/afl-forkserver.o src/afl-performance.o -o $@ $(PYFLAGS) $(LDFLAGS) -lm
-CC_OPT += -lm
+SRC_C += afl-performance.c afl-common.c afl-forkserver.c afl-sharedmem.c
 
 # Unneeded fuzz files. They contain extra functionality that we do not care about.
-FILTER = $(AFL++_DIR)/src/afl-fuzz-statsd.c $(AFL++_DIR)/src/afl-fuzz-python.c $(AFL++_DIR)/src/afl-fuzz-statsd.c
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz.c)
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-bitmap.c) # worked, probably not necessary
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-cmplog.c) # compiled
-#SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-extras.c) # did not compile, but is optional, if no dictionaries are used
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-init.c) # compiled, necessary
-#SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-mutators.c) # did not compile, but is only used for custom mutators
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-one.c) # compiled
-#SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-python.c) # does not matter, we dont care about python implementation
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-queue.c) # compiled
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-redqueen.c) # compiled, probably unnecessary
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-run.c) # compiled
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-skipdet.c) # compiled
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-state.c) # necessary
-SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-stats.c) # necessary, skipped for now, (see RUSAGE)
-#SRC_C += $(notdir $(AFL++_DIR)/src/afl-fuzz-statsd.c) # not needed
+NOT_REQUIRED += afl-fuzz-extras.c afl-fuzz-mutators.c afl-fuzz-python.c afl-fuzz-statsd.c
+
+AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
+SRC_C += $(AFL_FUZZ_FILES)
 
 vpath %.c $(AFL++_DIR)/src
 
 
-SRC_CC += $(notdir $(wildcard $(PRG_DIR)/../libc/src/*.cc))
-SRC_CC += $(notdir $(wildcard $(PRG_DIR)/../libc/*.cc))
-
-vpath %.cc $(PRG_DIR)/../libc/src
-vpath %.cc $(PRG_DIR)/../libc
