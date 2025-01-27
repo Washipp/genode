@@ -1,0 +1,34 @@
+build { core lib/ld lib/libc lib/vfs timer init afl-fuzz }
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="CPU"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="250"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+	<start name="afl-fuzz">
+		<resource name="RAM" quantum="500M"/>
+        <config>
+            <vfs> <dir name="dev"> <log/> <inline name="rtc">2025-01-01 01:01</inline> </dir> </vfs>
+            <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+        </config>
+	</start>
+</config>}
+
+build_boot_image [build_artifacts]
+append qemu_args " -nographic "
+
+run_genode_until forever
+#"afl-fuzz test completed.*\n" 10
