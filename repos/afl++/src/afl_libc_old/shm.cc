@@ -8,7 +8,7 @@ int shmget (int key, size_t size, int shmflg) {
     (void)size;
     (void)shmflg;
     NOT_IMPLEMENTED;
-    return 0;
+    return -1;
 }
 
 int shmctl (int shmid, int cmd, struct shmid_ds *buf) {
@@ -16,7 +16,7 @@ int shmctl (int shmid, int cmd, struct shmid_ds *buf) {
     (void)cmd;
     (void)buf;
     NOT_IMPLEMENTED;
-    return 0;
+    return -1;
 }
 
 void *shmat (int shmid, const void *shmaddr, int shmflg) {
@@ -30,5 +30,5 @@ void *shmat (int shmid, const void *shmaddr, int shmflg) {
 int shmdt (const void *shmaddr) {
     (void)shmaddr;
     NOT_IMPLEMENTED;
-    return 0;
+    return -1;
 }

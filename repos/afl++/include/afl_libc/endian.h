@@ -1,0 +1,5 @@
+
+#ifndef GENODE_ENDIAN_H
+#define GENODE_ENDIAN_H
+
+#endif //GENODE_ENDIAN_H

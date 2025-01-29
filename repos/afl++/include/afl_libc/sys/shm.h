@@ -1,32 +1,19 @@
 #ifndef AFL_SHM_H
 #define AFL_SHM_H
 
-#include "stddef.h"
-#include "sys/types.h"
+#include <stddef.h>
+#include <sys/types.h>
 
 typedef unsigned long int __syscall_ulong_t;
 
 typedef __syscall_ulong_t shmatt_t;
 
-struct ipc_perm {
-    int __key;                           /* Key.  */
-    unsigned int uid;                    /* Owner's user ID.  */
-    unsigned int gid;                    /* Owner's group ID.  */
-    unsigned int cuid;                   /* Creator's user ID.  */
-    unsigned int cgid;                   /* Creator's group ID.  */
-    unsigned int mode;                   /* Read/write permission.  */
-    unsigned short int __seq;            /* Sequence number.  */
-    unsigned short int __pad2;
-    __syscall_ulong_t __glibc_reserved1;
-    __syscall_ulong_t __glibc_reserved2;
-};
 
 /* Data structure describing a shared memory segment.  */
 struct shmid_ds {
 #ifdef __USE_TIME64_REDIRECTS
 # include <bits/types/struct_shmid64_ds_helper.h>
 #else
-    struct ipc_perm shm_perm;    /* operation permission struct */
     size_t shm_segsz;            /* size of segment in bytes */
 # if __TIMESIZE == 32
     __time_t shm_atime;			/* time of last shmat() */
