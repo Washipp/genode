@@ -17,14 +17,19 @@ void Libc::Component::construct(Libc::Env &env)
 {
     Libc::with_libc([&] () {
         Genode::log("LIBC construct called"); (void)env;
-        int argc = 1;
+        int argc = 7;
         char **argv_orig = (char **) malloc(argc * sizeof(char *));
-        char **envp = (char **) malloc(argc * sizeof(char *));
+        char **envp = (char **) malloc(1 * sizeof(char *));
 
-        argv_orig[0] = strdup("program");
+        argv_orig[0] = strdup("./program");
+        argv_orig[1] = strdup("-i");
+        argv_orig[2] = strdup("./input");
+        argv_orig[3] = strdup("-o");
+        argv_orig[4] = strdup("./output");
+        argv_orig[5] = strdup("--");
+        argv_orig[6] = strdup("/home/g-user/code/sandbox/target");
 
-        printf("Wait\n");
-        wait_for_continue();
+//        wait_for_continue();
         main(argc, argv_orig, envp);
         Genode::log("afl-fuzz test completed.");
     });

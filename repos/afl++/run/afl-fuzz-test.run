@@ -1,4 +1,8 @@
-build { core lib/ld lib/libc lib/vfs timer init afl-fuzz }
+build { core lib/ld lib/libc lib/vfs lib/vfs_jitterentropy timer init afl-fuzz }
+
+import_from_depot [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs\
+                  [depot_user]/src/libc
 
 create_boot_directory
 
@@ -13,16 +17,28 @@ install_config {
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
-	<default caps="250"/>
+	<default caps="350"/>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="afl-fuzz">
-		<resource name="RAM" quantum="500M"/>
+		<resource name="RAM" quantum="1000M"/>
         <config>
-            <vfs> <dir name="dev"> <log/> <inline name="rtc">2025-01-01 01:01</inline> </dir> </vfs>
-            <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"/>
+            <vfs>
+                <dir name="dev">
+                    <log/>
+                    <null/>
+                    <inline name="rtc">2025-01-01 01:01</inline>
+                    <jitterentropy name="random"/>
+                    <jitterentropy name="urandom"/>
+                </dir>
+                <dir name="output"> <ram/> </dir>
+                <dir name="input">
+                    <inline name="input-file">content</inline>
+                </dir>
+            </vfs>
+            <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"  rng="/dev/urandom" />
         </config>
 	</start>
 </config>}
@@ -30,5 +46,5 @@ install_config {
 build_boot_image [build_artifacts]
 append qemu_args " -nographic "
 
+# run_genode_until "afl-fuzz test completed.*\n" 25
 run_genode_until forever
-#"afl-fuzz test completed.*\n" 10

@@ -30,5 +30,5 @@ AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
 SRC_C += $(AFL_FUZZ_FILES)
 
 vpath %.c $(AFL++_DIR)/src
-
+vpath %.cc $(REP_DIR)/src/afl_libc
 
