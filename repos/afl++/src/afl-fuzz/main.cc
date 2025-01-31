@@ -1,6 +1,10 @@
+#include "init.h"
+
+/* Genode includes */
 #include <libc/component.h>
 #include <base/log.h>
 
+/* libc includes */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <stdio.h>
@@ -8,6 +12,7 @@
 #include <string.h>
 #pragma GCC diagnostic pop  /* restore -Wconversion warnings */
 
+// Required definition to start afl-fuzz' main function.
 extern "C" int main(int argc, char **argv_orig, char **envp);
 
 /* Used for debugging. Upon call, the execution waits for an ENTER input. */
@@ -15,8 +20,8 @@ extern "C" void wait_for_continue(void);
 
 void Libc::Component::construct(Libc::Env &env)
 {
+    shm_init(env);
     Libc::with_libc([&] () {
-        Genode::log("LIBC construct called"); (void)env;
         int argc = 7;
         char **argv_orig = (char **) malloc(argc * sizeof(char *));
         char **envp = (char **) malloc(1 * sizeof(char *));
