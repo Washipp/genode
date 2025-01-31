@@ -1,7 +1,8 @@
-build { core lib/ld lib/libc lib/vfs lib/vfs_jitterentropy timer init afl-fuzz }
+build { core lib/ld lib/libc lib/vfs lib/vfs_jitterentropy lib/vfs_pipe timer init afl-fuzz }
 
 import_from_depot [depot_user]/src/vfs_jitterentropy \
-                  [depot_user]/src/vfs\
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_pipe \
                   [depot_user]/src/libc
 
 create_boot_directory
@@ -23,12 +24,13 @@ install_config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="afl-fuzz">
-		<resource name="RAM" quantum="1000M"/>
+		<resource name="RAM" quantum="1500M"/>
         <config>
             <vfs>
                 <dir name="dev">
                     <log/>
                     <null/>
+                    <dir name="pipe"> <pipe/> </dir>
                     <inline name="rtc">2025-01-01 01:01</inline>
                     <jitterentropy name="random"/>
                     <jitterentropy name="urandom"/>
@@ -38,7 +40,7 @@ install_config {
                     <inline name="input-file">content</inline>
                 </dir>
             </vfs>
-            <libc stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc"  rng="/dev/urandom" />
+            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
         </config>
 	</start>
 </config>}
