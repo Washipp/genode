@@ -1,17 +1,33 @@
 /* Afl-libc includes */
 #include "unistd.h"
-#include "stddef.h"
 
 /* Genode includes */
 #include <base/log.h>
-#include <base/sleep.h>
 
 #define NOT_IMPLEMENTED Genode::log("'",__func__, "()' not implemented")
 
+/* This function is used exclusively in afl-fuzz when the fuzzing is stopped.
+ * The function can be removed, provided that the components are stopped appropriately. */
 int getpgid(int pid)
 {
     (void) pid;
     NOT_IMPLEMENTED;
-    return 0;
+    return -1;
 }
 
+/* Link is used once, and is optional. So we default to returning -1, error.
+ * AFL++ should be able to handle it accordingly. */
+int link(const char *from, const char *to)
+{
+    (void) from;
+    (void) to;
+    return -1;
+}
+
+/* Create a new session with the calling process as its leader.
+   The process group IDs of the session and the calling process
+   are set to the process ID of the calling process, which is returned.  */
+pid_t setsid (void) {
+    NOT_IMPLEMENTED;
+    return -1;
+}
