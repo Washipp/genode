@@ -1,5 +1,5 @@
 TARGET = afl-fuzz
-SRC_CC += main.cc shm.cc math.cc unistd.cc
+SRC_CC += main.cc shm_server.cc math.cc unistd.cc resource.cc
 LIBS += base libc
 
 INC_DIR += $(PRG_DIR)/include
