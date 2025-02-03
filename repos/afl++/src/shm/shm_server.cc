@@ -1,3 +1,5 @@
+#include "shm_session.h"
+
 /* AFL-libc includes */
 #include "sys/shm.h"
 
@@ -35,7 +37,6 @@ struct Shm_env {
 
     struct Dict_elem : Dictionary<Dict_elem, int>::Element {
 
-    public:
         Ram_dataspace_capability _ds;
 
         Dict_elem(Dictionary<Dict_elem, int> &dict, int shmid,
@@ -43,30 +44,43 @@ struct Shm_env {
                 Dictionary<Dict_elem, int>::Element(dict, shmid),
                 _ds(ds)
         { }
+    };
 
+    /*******************
+     ** RPC interface **
+     *******************/
 
-    private:
+    struct Shm_Session_component : Genode::Rpc_object<Shm_Session> {
 
-//        Dict_elem(const Dict_elem&) = delete;
-//        Dict_elem& operator=(const Dict_elem&) = delete;
-//        Dict_elem(Dict_elem&) = delete;
-//        Dict_elem& operator=(Dict_elem&) = delete;
+        Dictionary<Dict_elem, int> &_dict;
+
+        Shm_Session_component(Dictionary<Dict_elem, int> &dict) : _dict(dict)
+        { }
+
+        Ram_dataspace_capability shm_get_dataspace(int shmid) override
+        {
+            return _dict.with_element(shmid,
+                                      [&](Dict_elem &elem) -> Ram_dataspace_capability { return elem._ds; },
+                                      [&]() -> Ram_dataspace_capability { return {}; });
+        }
     };
 
     Env &env;
 
-    Heap _heap {env.ram(), env.rm()};
+    Heap _heap { env.ram(), env.rm() };
 
     /* Maps the Shared Memory Identifier to the dataspace capability. */
     Dictionary<Dict_elem, int> dict {};
 
-    Shm_env(Env &env) : env(env)
+    Shm_Session_component shm_session_component;
+
+    Shm_env(Env &env) : env(env), shm_session_component(dict)
     { }
 
     ~Shm_env()
     {
         Genode::log("Unloading dict elements");
-        // TODO: So far, destroy does not seem to work. We ignore the memory problems for now, just some dangling pointers
+        // TODO: destroy does not seem to work. We ignore the memory problems for now, just some dangling pointers
 
 //        dict.for_each([&](Dict_elem const &elem)  {
 //            Genode::log("Element found");
@@ -78,7 +92,7 @@ struct Shm_env {
 
     void add_elem(int shmid, Ram_dataspace_capability ds)
     {
-        new (_heap) Dict_elem {dict, shmid, ds};
+        new (_heap) Dict_elem { dict, shmid, ds };
     }
 
     Ram_dataspace_capability get_elem(int shmid)
@@ -97,6 +111,9 @@ static Constructible<Shm_env> _shm_env;
 void shm_init(Env &env)
 {
     _shm_env.construct(env);
+
+    // Announce the RPC session component, such that the client (SUT) can request the data space capabilites.
+    env.ep().manage(_shm_env->shm_session_component);
 }
 
 /**
@@ -175,7 +192,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
     auto ds = _shm_env->get_elem(shmid);
 
     if (!ds.valid()) {
-        Genode::error("shmid '",shmid,"' invalid, not capability found.");
+        Genode::error("shmid '", shmid, "' invalid, not capability found.");
         return (void *) -1;
     }
 

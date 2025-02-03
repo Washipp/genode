@@ -1,5 +1,4 @@
+#ifndef AFL_ENDIAN_H
+#define AFL_ENDIAN_H
 
-#ifndef GENODE_ENDIAN_H
-#define GENODE_ENDIAN_H
-
-#endif //GENODE_ENDIAN_H
+#endif //AFL_ENDIAN_H

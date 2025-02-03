@@ -2,7 +2,8 @@ TARGET = afl-fuzz
 SRC_CC += main.cc shm_server.cc math.cc unistd.cc resource.cc
 LIBS += base libc
 
-INC_DIR += $(PRG_DIR)/include
+INC_DIR += $(REP_DIR)/include/afl_libc
+INC_DIR += $(REP_DIR)/include/shm
 
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
 INC_DIR += $(AFL++_DIR)/include
@@ -31,4 +32,5 @@ SRC_C += $(AFL_FUZZ_FILES)
 
 vpath %.c $(AFL++_DIR)/src
 vpath %.cc $(REP_DIR)/src/afl_libc
+vpath %.cc $(REP_DIR)/src/shm
 

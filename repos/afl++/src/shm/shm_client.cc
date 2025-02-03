@@ -1,5 +1,15 @@
+#include "shm_session.h"
+
+/* AFL-libc includes */
 #include "sys/shm.h"
+
+/* Genode includes */
 #include <base/log.h>
+#include <base/heap.h>
+#include <base/component.h>
+#include <base/attached_ram_dataspace.h>
+#include <util/dictionary.h>
+
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 

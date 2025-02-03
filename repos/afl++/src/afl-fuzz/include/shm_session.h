@@ -1,4 +1,0 @@
-#ifndef AFL_SHM_SESSION_H
-#define AFL_SHM_SESSION_H
-
-#endif //AFL_SHM_SESSION_H

@@ -1,7 +1,8 @@
 LIBS += base libc
 
 SRC_CC += shm_client.cc
-INC_DIR += $(REP_DIR)/src/afl-fuzz/include
+INC_DIR += $(REP_DIR)/include/afl_libc
+INC_DIR += $(REP_DIR)/include/shm
 
 # Here we abuse the OpenBSD macro checks in AFL to use libc write() instead of syscall(SYS_write)
 CC_OPT += -D__OpenBSD__
@@ -16,4 +17,4 @@ CC_C_OPT += -O3 -Wall -Wno-pointer-sign -Wno-unused-function -Wno-unused-result 
 CC_C_OPT += -Wno-prio-ctor-dtor
 
 vpath %.c $(AFL++_DIR)/instrumentation/
-vpath %.cc $(REP_DIR)/src/afl-compiler-rt/
+vpath %.cc $(REP_DIR)/src/shm/
