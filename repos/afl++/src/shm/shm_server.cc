@@ -1,7 +1,6 @@
-#include "shm_session.h"
-
-/* AFL-libc includes */
+/* afl++ includes */
 #include "sys/shm.h"
+#include "shm_session.h"
 
 /* Genode includes */
 #include <base/log.h>
@@ -13,7 +12,7 @@
 /* libc includes */
 #include <sys/ipc.h>
 
-// This value comes from attached_ram_dataspace.h
+// This value comes from attached_ram_dataspace.h, but somehow it is not linked correctly...
 #ifndef PAGE_SIZE
 #define PAGE_SIZE 4096
 #endif
@@ -29,8 +28,7 @@ using namespace Genode;
 
 int local_name_to_shmid(long local_name);
 
-class SHMAT_Alloc_Failed : public Exception {
-};
+class SHMAT_Alloc_Failed : public Exception {};
 
 struct Shm_env {
 
@@ -112,7 +110,7 @@ void shm_init(Env &env)
 {
     _shm_env.construct(env);
 
-    // Announce the RPC session component, such that the client (SUT) can request the data space capabilites.
+    // Announce the RPC session component, such that the client (SUT) can request the data space capabilities.
     env.ep().manage(_shm_env->shm_session_component);
 }
 
@@ -128,7 +126,8 @@ void shm_init(Env &env)
  * there needs to be a separate mechanism that maps from shmid to the dataspace capability.
  * */
 
-/* We always expect key to be IPC_PRIVATE, AFL++ only uses it in this way.
+/**
+ * We always expect key to be IPC_PRIVATE, AFL++ only uses it in this way.
  * This also means, we can ignore the key and map shmid to the capability directly.
  * */
 int shmget(int key, size_t size, int shmflg)
@@ -178,10 +177,12 @@ int local_name_to_shmid(long local_name)
  * 1. Retrieve the capability based on the shmid-dataspace mapping.
  * 2. Increase shm_nattch in shmaddr.
  * 3. Make the dataspace visible in its own address space using an Attached RAM data space.
- * 4. Return client-local-address or server-local-address based on the calles.
+ * 4. Return client-local-address or server-local-address based on the callees.
  * */
 
-/* shmflg is alwasy considered to be 0 as AFL++ does not use another value. */
+/**
+ * shmflg is always considered to be 0 as AFL++ does not use another value.
+ * */
 void *shmat(int shmid, const void *shmaddr, int shmflg)
 {
     if (!_shm_env.constructed()) {
