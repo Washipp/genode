@@ -14,7 +14,7 @@ DOC_PATH     = $(PREFIX)/share/doc/afl
 
 CC_C_OPT += -DBIN_PATH=\"$(BIN_PATH)\" -DDOC_PATH=\"$(DOC_PATH)\"
 
-# The following libs have also been included. We leave them for now
+# The following libs have also been included. Ignore them for now
 #  -ldl -lrt -lm -lz -lm
 CC_C_OPT += -Wno-format-truncation -g -Wno-pointer-sign -Wno-variadic-macros -Wall -Wextra -Wno-pointer-arith -fPIC
 
@@ -31,6 +31,5 @@ AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
 SRC_C += $(AFL_FUZZ_FILES)
 
 vpath %.c $(AFL++_DIR)/src
-vpath %.cc $(REP_DIR)/src/afl_libc
 vpath %.cc $(REP_DIR)/src/shm
 

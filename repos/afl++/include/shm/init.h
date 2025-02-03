@@ -1,8 +1,8 @@
-#ifndef GENODE_INIT_H
-#define GENODE_INIT_H
+#ifndef AFL_INIT_H
+#define AFL_INIT_H
 
 #include <base/component.h>
 
 void shm_init(Genode::Env &env);
 
-#endif //GENODE_INIT_H
+#endif //AFL_INIT_H
