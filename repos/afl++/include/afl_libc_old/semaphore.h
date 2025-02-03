@@ -1,5 +1,0 @@
-
-#ifndef AFL_SEMAPHORE_H
-#define AFL_SEMAPHORE_H
-
-#endif //AFL_SEMAPHORE_H
