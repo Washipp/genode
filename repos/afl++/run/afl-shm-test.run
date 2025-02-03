@@ -1,0 +1,78 @@
+build { core init timer
+        lib/ld
+        lib/libc
+        lib/vfs
+        test/shm_client
+        test/shm_server
+      }
+
+import_from_depot [depot_user]/src/vfs \
+                  [depot_user]/src/libc
+
+create_boot_directory
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <any-child/> <parent/> </any-service>
+	</default-route>
+	<default caps="500"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="afl-shm-server">
+		<resource name="RAM" quantum="1500M"/>
+        <config>
+            <parent-provides>
+                <service name="PD"/>
+                <service name="RM"/>
+                <service name="CPU"/>
+                <service name="ROM"/>
+            </parent-provides>
+
+            <vfs> <dir name="dev"> <log/> </dir> </vfs>
+            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" />
+
+            <start name="init" caps="1000">
+                <resource name="RAM" quantum="10M"/>
+                <config>
+                    <parent-provides>
+                        <service name="LOG"/>
+                        <service name="ROM"/>
+                        <service name="CPU"/>
+                        <service name="PD"/>
+                    </parent-provides>
+
+                    <start name="afl-shm-client">
+                        <resource name="RAM" quantum="150M"/>
+                        <config>
+                            <vfs> <dir name="dev"> <log/> </dir> </vfs>
+                            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
+                        </config>
+                        <route> <any-service> <parent/> </any-service> </route>
+                    </start>
+
+                </config>
+                <route>
+                    <any-service> <parent/> </any-service>
+                </route>
+            </start>
+
+            <route> <any-service> <any-child/> <parent/> </any-service> </route>
+        </config>
+	</start>
+</config>}
+
+build_boot_image [build_artifacts]
+append qemu_args " -nographic "
+
+run_genode_until "afl-shm test completed.*\n" 25
