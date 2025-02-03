@@ -7,7 +7,8 @@
 #define NOT_IMPLEMENTED Genode::log("'",__func__, "()' not implemented")
 
 
-int	setrlimit(int resource, const struct rlimit *rlimits) {
+int setrlimit(int resource, const struct rlimit *rlimits)
+{
     (void) resource;
     (void) rlimits;
     NOT_IMPLEMENTED;

@@ -1,7 +1,11 @@
-#include "errno.h"
+/* Genode include */
 #include <base/log.h>
 
-int *__errno_location(void) {
+/* libc include */
+#include <errno.h>
+
+int *__errno_location(void)
+{
     Genode::log("errno_location called");
     return nullptr;
 }

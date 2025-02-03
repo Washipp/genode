@@ -1,8 +1,8 @@
-/* Afl-libc includes */
-#include "unistd.h"
-
 /* Genode includes */
 #include <base/log.h>
+
+/* libc includes */
+#include <unistd.h>
 
 #define NOT_IMPLEMENTED Genode::log("'",__func__, "()' not implemented")
 
@@ -27,7 +27,8 @@ int link(const char *from, const char *to)
 /* Create a new session with the calling process as its leader.
    The process group IDs of the session and the calling process
    are set to the process ID of the calling process, which is returned.  */
-pid_t setsid (void) {
+pid_t setsid(void)
+{
     NOT_IMPLEMENTED;
     return -1;
 }
