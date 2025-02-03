@@ -199,7 +199,14 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
     addr_t server_addr = 0;
 
     if (shmaddr == NULL) {
-        _shm_env->env.rm().attach(ds, {}).with_result(
+        _shm_env->env.rm().attach(ds,  Region_map::Attr {
+                .size       = 0,
+                .offset     = 0,
+                .use_at     = false,
+                .at         = {},
+                .executable = false,
+                .writeable  = true,
+        }).with_result(
                 [&](Region_map::Range r) {
                     server_addr = r.start;
                 },
@@ -210,11 +217,11 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
     } else {
         Genode::warning("shmaddr is not NULL. This case should not really work.");
         _shm_env->env.rm().attach(ds, Region_map::Attr {
-                .size       = {},
+                .size       = 0,
                 .offset     = 0,
                 .use_at     = true,
                 .at         = (unsigned long) (shmaddr),
-                .executable = {},
+                .executable = false,
                 .writeable  = true,
         }).with_result(
                 [&](Region_map::Range r) {
