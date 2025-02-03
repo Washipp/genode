@@ -253,13 +253,10 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 }
 
 /**
- * Steps to implement:
- * 1. Unload the shared memory allocator and remove the shmid mapping.
- *      --> maybe the shmaddr needs to be added to the shmid-capability mapping?
+ * Does not check, if it failed. In this case, return -1.
  * */
 int shmdt(const void *shmaddr)
 {
-    (void) shmaddr;
-    NOT_IMPLEMENTED;
-    return -1;
+    _shm_env->env.rm().detach((addr_t) (shmaddr));
+    return 0;
 }
