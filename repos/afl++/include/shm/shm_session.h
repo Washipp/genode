@@ -9,6 +9,8 @@ using namespace Genode;
 
 struct Shm_Session : Genode::Session
 {
+    static const char *service_name() { return "Shm_Session"; }
+    enum { CAP_QUOTA = 4 };
 
     virtual Ram_dataspace_capability shm_get_dataspace(int shmid) = 0;
 
