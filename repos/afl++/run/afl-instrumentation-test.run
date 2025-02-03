@@ -1,0 +1,49 @@
+#
+# Build
+#
+
+build { core lib/ld lib/libc lib/vfs init test/afl-fuzz-sut  }
+
+import_from_depot [depot_user]/src/vfs \
+                  [depot_user]/src/libc
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="LOG"/>
+		<service name="PD"/>
+		<service name="CPU"/>
+		<service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<default caps="200"/>
+	<start name="afl-fuzz-sut">
+		<resource name="RAM" quantum="50M"/>
+        <config>
+            <vfs>
+                <dir name="dev">
+                    <log/>
+                </dir>
+            </vfs>
+            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
+        </config>
+	</start>
+</config>}
+
+#
+# Boot image
+#
+
+build_boot_image [build_artifacts]
+
+append qemu_args " -nographic "
+
+run_genode_until "Instrumentation test succeeded.*\n" 10

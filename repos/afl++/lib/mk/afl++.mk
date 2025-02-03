@@ -1,6 +1,6 @@
 LIBS += base libc
 
-SRC_CC += main.cc shm_client.cc
+SRC_CC += shm_client.cc
 INC_DIR += $(REP_DIR)/src/afl-fuzz/include
 
 # Here we abuse the OpenBSD macro checks in AFL to use libc write() instead of syscall(SYS_write)
