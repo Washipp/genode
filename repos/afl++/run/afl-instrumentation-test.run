@@ -1,17 +1,9 @@
-#
-# Build
-#
-
 build { core lib/ld lib/libc lib/vfs init test/afl-fuzz-sut  }
 
 import_from_depot [depot_user]/src/vfs \
                   [depot_user]/src/libc
 
 create_boot_directory
-
-#
-# Generate config
-#
 
 install_config {
 <config>
@@ -28,19 +20,11 @@ install_config {
 	<start name="afl-fuzz-sut">
 		<resource name="RAM" quantum="50M"/>
         <config>
-            <vfs>
-                <dir name="dev">
-                    <log/>
-                </dir>
-            </vfs>
+            <vfs> <dir name="dev"> <log/> </dir> </vfs>
             <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
         </config>
 	</start>
 </config>}
-
-#
-# Boot image
-#
 
 build_boot_image [build_artifacts]
 
