@@ -8,6 +8,7 @@
 #include <base/component.h>
 #include <base/attached_ram_dataspace.h>
 #include <util/dictionary.h>
+#include <root/component.h>
 
 /* libc includes */
 #include <sys/ipc.h>
@@ -19,19 +20,11 @@
 
 #define NOT_IMPLEMENTED Genode::log("'", __func__, "()' not implemented")
 
-/**
- * RAM data space          --> server
- * Attached RAM data space --> client
- */
-
 using namespace Genode;
-
-int local_name_to_shmid(long local_name);
 
 class SHMAT_Alloc_Failed : public Exception {};
 
 struct Shm_env {
-
 
     struct Dict_elem : Dictionary<Dict_elem, int>::Element {
 
@@ -63,6 +56,24 @@ struct Shm_env {
         }
     };
 
+    class Shm_Session_root_component : public Genode::Root_component<Shm_Session_component> {
+
+        Dictionary<Dict_elem, int> &_dict;
+    protected:
+        Shm_Session_component *_create_session(const char *) override
+        {
+            return new(md_alloc()) Shm_Session_component(_dict);
+        }
+
+    public:
+
+        Shm_Session_root_component(Genode::Entrypoint &ep,
+                                   Genode::Allocator &alloc,
+                                   Dictionary<Dict_elem, int> &dict) :
+                Genode::Root_component<Shm_Session_component>(ep, alloc), _dict(dict)
+        { }
+    };
+
     Env &env;
 
     Heap _heap { env.ram(), env.rm() };
@@ -70,10 +81,12 @@ struct Shm_env {
     /* Maps the Shared Memory Identifier to the dataspace capability. */
     Dictionary<Dict_elem, int> dict {};
 
-    Shm_Session_component shm_session_component;
+    Shm_Session_root_component root {env.ep(), _heap, dict};
 
-    Shm_env(Env &env) : env(env), shm_session_component(dict)
-    { }
+    Shm_env(Env &env) : env(env)
+    {
+        env.parent().announce(env.ep().manage(root));
+    }
 
     ~Shm_env()
     {
@@ -90,7 +103,7 @@ struct Shm_env {
 
     void add_elem(int shmid, Ram_dataspace_capability ds)
     {
-        new (_heap) Dict_elem { dict, shmid, ds };
+        new(_heap) Dict_elem { dict, shmid, ds };
     }
 
     Ram_dataspace_capability get_elem(int shmid)
@@ -100,7 +113,14 @@ struct Shm_env {
                                  [&]() -> Ram_dataspace_capability { return {}; });
     }
 
-
+    int local_name_to_shmid(long local_name)
+    {
+        int shmid = static_cast<int>(local_name);
+        if (shmid != static_cast<long>(shmid)) {
+            Genode::warning("Converting local name to int resulted in precision loss");
+        }
+        return shmid;
+    }
 };
 
 static Constructible<Shm_env> _shm_env;
@@ -109,9 +129,6 @@ static Constructible<Shm_env> _shm_env;
 void shm_init(Env &env)
 {
     _shm_env.construct(env);
-
-    // Announce the RPC session component, such that the client (SUT) can request the data space capabilities.
-    env.ep().manage(_shm_env->shm_session_component);
 }
 
 /**
@@ -154,7 +171,7 @@ int shmget(int key, size_t size, int shmflg)
     }
 
     auto ds = _shm_env->env.pd().alloc(final_size);
-    auto shmid = local_name_to_shmid(ds.local_name());
+    auto shmid = _shm_env->local_name_to_shmid(ds.local_name());
     _shm_env->add_elem(shmid, ds);
 
     // For now the flags are ignored. This way, the compiler is satisfied.
@@ -163,14 +180,6 @@ int shmget(int key, size_t size, int shmflg)
     return shmid;
 }
 
-int local_name_to_shmid(long local_name)
-{
-    int shmid = static_cast<int>(local_name);
-    if (shmid != static_cast<long>(shmid)) {
-        Genode::warning("Converting local name to int resulted in precision loss");
-    }
-    return shmid;
-}
 
 /**
  * Steps to implement:
@@ -190,7 +199,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
         return (void *) -1;
     }
 
-    auto ds = _shm_env->get_elem(shmid);
+    Ram_dataspace_capability ds = _shm_env->get_elem(shmid);
 
     if (!ds.valid()) {
         Genode::error("shmid '", shmid, "' invalid, not capability found.");
@@ -199,40 +208,23 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
 
     addr_t server_addr = 0;
 
-    if (shmaddr == NULL) {
-        _shm_env->env.rm().attach(ds,  Region_map::Attr {
-                .size       = 0,
-                .offset     = 0,
-                .use_at     = false,
-                .at         = {},
-                .executable = false,
-                .writeable  = true,
-        }).with_result(
-                [&](Region_map::Range r) {
-                    server_addr = r.start;
-                },
-                [&](Region_map::Attach_error) {
-                    throw SHMAT_Alloc_Failed();
-                }
-        );
-    } else {
-        Genode::warning("shmaddr is not NULL. This case should not really work.");
-        _shm_env->env.rm().attach(ds, Region_map::Attr {
-                .size       = 0,
-                .offset     = 0,
-                .use_at     = true,
-                .at         = (unsigned long) (shmaddr),
-                .executable = false,
-                .writeable  = true,
-        }).with_result(
-                [&](Region_map::Range r) {
-                    server_addr = r.start;
-                },
-                [&](Region_map::Attach_error) {
-                    throw SHMAT_Alloc_Failed();
-                }
-        );
-    }
+    Region_map::Attr attr {
+            .size       = 0,
+            .offset     = 0,
+            .use_at     = shmaddr != NULL,
+            .at         = (unsigned long) (shmaddr),
+            .executable = false,
+            .writeable  = true,
+    };
+
+    _shm_env->env.rm().attach(ds, attr).with_result(
+            [&](Region_map::Range r) {
+                server_addr = r.start;
+            },
+            [&](Region_map::Attach_error) {
+                throw SHMAT_Alloc_Failed();
+            }
+    );
 
     // For now the flags are ignored. This way, the compiler is satisfied.
     (void) shmflg;
@@ -240,16 +232,20 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
 }
 
 /**
- * Steps to implement:
- * 1. ??? look for an implementation and copy it.
+ * The value of cmd is always IPC_RMID as used by AFL++.
+ * This means, the memory is marked to be destroyed in order to prevent shm from leaking.
+ * Thus, the function does nothing in the context of AFL++.
  * */
 int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 {
+    if (!_shm_env.constructed()) {
+        Genode::error("Call 'shm_init()' first.");
+        return -1;
+    }
     (void) shmid;
     (void) cmd;
     (void) buf;
-    NOT_IMPLEMENTED;
-    return -1;
+    return 0;
 }
 
 /**
@@ -257,6 +253,10 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
  * */
 int shmdt(const void *shmaddr)
 {
+    if (!_shm_env.constructed()) {
+        Genode::error("Call 'shm_init()' first.");
+        return -1;
+    }
     _shm_env->env.rm().detach((addr_t) (shmaddr));
     return 0;
 }
