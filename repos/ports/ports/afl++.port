@@ -10,4 +10,8 @@ PATCHES   := $(addprefix ${DIR(afl++)}/patches/, \
                          $(shell cat $(REP_DIR)/${DIR(afl++)}/patches/series))
 PATCH_OPT := -p1 -d ${DIR(afl++)}
 
-default : $(DOWNLOAD)
+
+default : build_gcc_plugin
+build_gcc_plugin: $(DOWNLOAD)
+	$(MAKE) -C ${DIR(afl++)}
+
