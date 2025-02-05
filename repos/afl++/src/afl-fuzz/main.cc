@@ -25,6 +25,7 @@ void Libc::Component::construct(Libc::Env &env)
     // This configuration should be done in the config of afl-fuzz
     setenv("AFL_NO_UI", "1", 0);
     setenv("AFL_SKIP_BIN_CHECK", "1", 0);
+    setenv("AFL_DEBUG_CHILD", "1", 0);
 
     Libc::with_libc([&] () {
         int argc = 7;

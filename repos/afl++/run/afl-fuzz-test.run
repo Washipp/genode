@@ -1,4 +1,9 @@
-build { core lib/ld lib/libc lib/vfs lib/vfs_jitterentropy lib/vfs_pipe timer init afl-fuzz }
+build { core init timer lib/ld
+        lib/libc lib/vfs
+        lib/vfs_jitterentropy
+        lib/vfs_pipe
+        server/vfs
+        afl-fuzz }
 
 import_from_depot [depot_user]/src/vfs_jitterentropy \
                   [depot_user]/src/vfs \
@@ -10,21 +15,25 @@ create_boot_directory
 install_config {
 <config>
 	<parent-provides>
-		<service name="LOG"/>
-		<service name="PD"/>
-		<service name="CPU"/>
-		<service name="ROM"/>
+        <service name="LOG"/>
+        <service name="PD"/>
+        <service name="RM"/>
+        <service name="CPU"/>
+        <service name="ROM"/>
 	</parent-provides>
 	<default-route>
-		<any-service> <parent/> <any-child/> </any-service>
+		<any-service> <any-child/> <parent/> </any-service>
 	</default-route>
 	<default caps="350"/>
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
 		<provides> <service name="Timer"/> </provides>
 	</start>
-	<start name="afl-fuzz">
-		<resource name="RAM" quantum="1500M"/>
+
+    <start name="vfs" caps="250">
+        <resource name="RAM" quantum="500M"/>
+        <provides> <service name="File_system"/> </provides>
+
         <config>
             <vfs>
                 <dir name="dev">
@@ -32,7 +41,6 @@ install_config {
                     <null/>
                     <dir name="pipe"> <pipe/> </dir>
                     <inline name="rtc">2025-01-01 01:01</inline>
-                    <jitterentropy name="random"/>
                     <jitterentropy name="urandom"/>
                 </dir>
                 <dir name="output"> <ram/> </dir>
@@ -40,9 +48,24 @@ install_config {
                     <inline name="input-file">content</inline>
                 </dir>
             </vfs>
+            <default-policy root="/" writeable="yes"/>
+        </config>
+    </start>
+
+	<start name="afl-fuzz">
+		<resource name="RAM" quantum="1500M"/>
+        <config>
+            <vfs> <fs/> </vfs>
+		    <default-policy root="/" writeable="yes"/>
             <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
         </config>
+        <route>
+            <service name="File_system"> <child name="vfs" /> </service>
+            <service name="Timer"> <child name="timer" /> </service>
+            <any-service> <parent/> </any-service>
+        </route>
 	</start>
+
 </config>}
 
 build_boot_image [build_artifacts]

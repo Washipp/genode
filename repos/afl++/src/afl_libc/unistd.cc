@@ -29,6 +29,9 @@ int link(const char *from, const char *to)
    are set to the process ID of the calling process, which is returned.  */
 pid_t setsid(void)
 {
-    NOT_IMPLEMENTED;
+    /* Note, even though it is not implemented, it does not seem to be a problem.
+     * The usage within AFL++ was patched out and the functionality was then tested.
+     * But this is no guarantee, that it is safe to remove. */
+    Genode::log("'",__func__, "()' not implemented. Which is okay for now. Expect more clutter on the terminal.");
     return -1;
 }
