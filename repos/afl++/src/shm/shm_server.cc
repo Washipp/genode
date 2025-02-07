@@ -13,11 +13,6 @@
 /* libc includes */
 #include <sys/ipc.h>
 
-// This value comes from attached_ram_dataspace.h, but somehow it is not linked correctly...
-#ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
-#endif
-
 #define NOT_IMPLEMENTED Genode::log("'", __func__, "()' not implemented")
 
 using namespace Genode;
@@ -126,18 +121,6 @@ void shm_init(Env &env)
 }
 
 /**
- * Steps to implement:
- * 1. afl-fuzz uses core's PD session to allocate new RAM data space
- * 2. The local_name() of the data space is then used as the 'shared memory identifier' (shmid)
- * 3. If the shmid is already in use, return the existing one, provided the access is allowed.
- *    (this is possibly already covered within Genode.)
- *
- *
- * Once the new RAM dataspace is allocated,
- * there needs to be a separate mechanism that maps from shmid to the dataspace capability.
- * */
-
-/**
  * We always expect key to be IPC_PRIVATE, AFL++ only uses it in this way.
  * This also means, we can ignore the key and map shmid to the capability directly.
  * */
@@ -157,6 +140,8 @@ int shmget(int key, size_t size, int shmflg)
         // Not sure about the implications yet.
         Genode::warning("Shared memory segment with key '", key, "' already exists.");
     }
+    // This value comes from attached_ram_dataspace.h but is only available as an enum there.
+    enum { PAGE_SIZE = 4096 };
 
     // rounded up to a multiple of PAGE_SIZE
     size_t final_size = size;
@@ -173,15 +158,6 @@ int shmget(int key, size_t size, int shmflg)
 
     return shmid;
 }
-
-
-/**
- * Steps to implement:
- * 1. Retrieve the capability based on the shmid-dataspace mapping.
- * 2. Increase shm_nattch in shmaddr.
- * 3. Make the dataspace visible in its own address space using an Attached RAM data space.
- * 4. Return client-local-address or server-local-address based on the callees.
- * */
 
 /**
  * shmflg is always considered to be 0 as AFL++ does not use another value.
