@@ -63,11 +63,6 @@ void Libc::Component::construct(Libc::Env &env)
 
         Genode::log("Got new shmid: ", shmid);
 
-        char buffer[12]; // Enough for int (-2147483648 to 2147483647) + null terminator
-        int success = setenv("SHMID", int_to_str(buffer, shmid), 0);
-
-        Genode::log("Assigned SHMID: ", success);
-
         auto addr = shmat(shmid, NULL, 0);
 
         Genode::log("Attached segment to: ", addr);

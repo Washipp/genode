@@ -45,6 +45,15 @@ struct Shm_env {
 
         Ram_dataspace_capability shm_get_dataspace(int shmid) override
         {
+            // This case is used to test the functionality, if the shmid is not available.
+            if (shmid == -1) {
+                Ram_dataspace_capability a;
+                _dict.with_any_element([&](Dict_elem &elem) {
+                    a = elem._ds;
+                });
+                return a;
+            }
+
             return _dict.with_element(shmid,
                                       [&](Dict_elem &elem) -> Ram_dataspace_capability { return elem._ds; },
                                       [&]() -> Ram_dataspace_capability { return {}; });
@@ -86,7 +95,7 @@ struct Shm_env {
     ~Shm_env()
     {
         while (dict.with_any_element([&](Dict_elem &elem)  {
-            destroy(_heap, const_cast<Dict_elem *>(&elem));
+            destroy(_heap, &elem);
         }));
     }
 

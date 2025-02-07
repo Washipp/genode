@@ -17,7 +17,8 @@ void Libc::Component::construct(Libc::Env &env)
         Genode::log("Shm_client init started.");
 
         Genode::log("Trying to attach segment");
-        auto addr = shmat(0, NULL, 0);
+
+        auto addr = shmat(-1, NULL, 0);
 
         Genode::log("Attached segment to: ", addr);
         Genode::memcpy(addr, "Test string from shm_server.", 29);
