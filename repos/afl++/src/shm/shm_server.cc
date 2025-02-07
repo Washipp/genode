@@ -90,15 +90,9 @@ struct Shm_env {
 
     ~Shm_env()
     {
-        Genode::log("Unloading dict elements");
-        // TODO: destroy does not seem to work. We ignore the memory problems for now, just some dangling pointers
-
-//        dict.for_each([&](Dict_elem const &elem)  {
-//            Genode::log("Element found");
-//            elem.~Dict_elem();
-//            Genode::destroy(_heap, &elem._ds);
-//            (void) elem;
-//        });
+        while (dict.with_any_element([&](Dict_elem &elem)  {
+            destroy(_heap, const_cast<Dict_elem *>(&elem));
+        }));
     }
 
     void add_elem(int shmid, Ram_dataspace_capability ds)
