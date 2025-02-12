@@ -38,7 +38,7 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[3] = strdup("-o");
         argv_orig[4] = strdup("./output");
         argv_orig[5] = strdup("--");
-        argv_orig[6] = strdup("/home/g-user/code/sandbox/target");
+        argv_orig[6] = strdup("/binary/posix_bin");
 
 //        wait_for_continue();
         main(argc, argv_orig, envp);
