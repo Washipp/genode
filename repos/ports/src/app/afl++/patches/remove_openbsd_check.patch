@@ -1,0 +1,29 @@
+diff --git a/instrumentation/afl-compiler-rt.o.c b/instrumentation/afl-compiler-rt.o.c
+index c08e6380..728853e4 100644
+--- a/instrumentation/afl-compiler-rt.o.c
++++ b/instrumentation/afl-compiler-rt.o.c
+@@ -52,9 +52,7 @@ __attribute__((weak)) void __sanitizer_symbolize_pc(void *, const char *fmt,
+ #include <errno.h>
+ 
+ #include <sys/mman.h>
+-#if !defined(__HAIKU__) && !defined(__OpenBSD__)
+-  #include <sys/syscall.h>
+-#endif
++
+ #ifndef USEMMAP
+   #include <sys/shm.h>
+ #endif
+@@ -2284,13 +2282,7 @@ static int area_is_valid(void *ptr, size_t len) {
+ 
+   if (unlikely(!ptr || __asan_region_is_poisoned(ptr, len))) { return 0; }
+ 
+-#ifdef __HAIKU__
+-  long r = _kern_write(__afl_dummy_fd[1], -1, ptr, len);
+-#elif defined(__OpenBSD__)
+   long r = write(__afl_dummy_fd[1], ptr, len);
+-#else
+-  long r = syscall(SYS_write, __afl_dummy_fd[1], ptr, len);
+-#endif  // HAIKU, OPENBSD
+ 
+   if (r <= 0 || r > len) return 0;
+

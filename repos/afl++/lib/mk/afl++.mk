@@ -4,9 +4,6 @@ SRC_CC += shm_client.cc
 INC_DIR += $(REP_DIR)/include/afl_libc
 INC_DIR += $(REP_DIR)/include/shm
 
-# Here we abuse the OpenBSD macro checks in AFL to use libc write() instead of syscall(SYS_write)
-CC_OPT += -D__OpenBSD__
-
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
 INC_DIR += $(AFL++_DIR)/include
 

@@ -1,0 +1,46 @@
+diff --git a/src/afl-fuzz-init.c b/src/afl-fuzz-init.c
+index 7310e49f..fd4bb762 100644
+--- a/src/afl-fuzz-init.c
++++ b/src/afl-fuzz-init.c
+@@ -1816,23 +1816,6 @@ static void handle_existing_out_dir(afl_state_t *afl) {
+   afl->fsrv.out_dir_fd = open(afl->out_dir, O_RDONLY);
+   if (afl->fsrv.out_dir_fd < 0) { PFATAL("Unable to open '%s'", afl->out_dir); }
+ 
+-#ifndef __sun
+-
+-  if (flock(afl->fsrv.out_dir_fd, LOCK_EX | LOCK_NB) && errno == EWOULDBLOCK) {
+-
+-    SAYF("\n" cLRD "[-] " cRST
+-         "Looks like the job output directory is being actively used by "
+-         "another\n"
+-         "    instance of afl-fuzz. You will need to choose a different %s\n"
+-         "    or stop the other process first.\n",
+-         afl->sync_id ? "fuzzer ID" : "output location");
+-
+-    FATAL("Directory '%s' is in use", afl->out_dir);
+-
+-  }
+-
+-#endif                                                            /* !__sun */
+-
+   f = fopen(fn, "r");
+ 
+   if (f) {
+@@ -2186,17 +2169,6 @@ void setup_dirs_fds(afl_state_t *afl) {
+ 
+     afl->fsrv.out_dir_fd = open(afl->out_dir, O_RDONLY);
+ 
+-#ifndef __sun
+-
+-    if (afl->fsrv.out_dir_fd < 0 ||
+-        flock(afl->fsrv.out_dir_fd, LOCK_EX | LOCK_NB)) {
+-
+-      PFATAL("Unable to flock() output directory.");
+-
+-    }
+-
+-#endif                                                            /* !__sun */
+-
+   }
+ 
+   if (afl->is_main_node) {

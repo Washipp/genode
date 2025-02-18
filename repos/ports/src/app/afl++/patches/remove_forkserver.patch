@@ -1,0 +1,411 @@
+diff --git a/instrumentation/afl-compiler-rt.o.c b/instrumentation/afl-compiler-rt.o.c
+index 728853e4..56ce1742 100644
+--- a/instrumentation/afl-compiler-rt.o.c
++++ b/instrumentation/afl-compiler-rt.o.c
+@@ -80,7 +80,6 @@ __attribute__((weak)) void __sanitizer_symbolize_pc(void *, const char *fmt,
+ #endif
+ 
+ #define CTOR_PRIO 3
+-#define EARLY_FS_PRIO 5
+ 
+ #include <sys/mman.h>
+ #include <fcntl.h>
+@@ -214,7 +213,6 @@ u32 __afl_already_initialized_forkserver;
+ u32 __afl_already_initialized_first;
+ u32 __afl_already_initialized_second;
+ u32 __afl_already_initialized_early;
+-u32 __afl_already_initialized_init;
+ 
+ /* Dummy pipe for area_is_valid() */
+ 
+@@ -273,73 +271,6 @@ static void send_forkserver_error(int error) {
+ 
+ }
+ 
+-/* SHM fuzzing setup. */
+-
+-static void __afl_map_shm_fuzz() {
+-
+-  char *id_str = getenv(SHM_FUZZ_ENV_VAR);
+-
+-  if (__afl_debug) {
+-
+-    fprintf(stderr, "DEBUG: fuzzcase shmem %s\n", id_str ? id_str : "none");
+-
+-  }
+-
+-  if (id_str) {
+-
+-    u8 *map = NULL;
+-
+-#ifdef USEMMAP
+-    const char *shm_file_path = id_str;
+-    int         shm_fd = -1;
+-
+-    /* create the shared memory segment as if it was a file */
+-    shm_fd = shm_open(shm_file_path, O_RDWR, DEFAULT_PERMISSION);
+-    if (shm_fd == -1) {
+-
+-      fprintf(stderr, "shm_open() failed for fuzz\n");
+-      send_forkserver_error(FS_ERROR_SHM_OPEN);
+-      exit(1);
+-
+-    }
+-
+-    map =
+-        (u8 *)mmap(0, MAX_FILE + sizeof(u32), PROT_READ, MAP_SHARED, shm_fd, 0);
+-
+-#else
+-    u32 shm_id = atoi(id_str);
+-    map = (u8 *)shmat(shm_id, NULL, 0);
+-
+-#endif
+-
+-    /* Whooooops. */
+-
+-    if (!map || map == (void *)-1) {
+-
+-      perror("Could not access fuzzing shared memory");
+-      send_forkserver_error(FS_ERROR_SHM_OPEN);
+-      exit(1);
+-
+-    }
+-
+-    __afl_fuzz_len = (u32 *)map;
+-    __afl_fuzz_ptr = map + sizeof(u32);
+-
+-    if (__afl_debug) {
+-
+-      fprintf(stderr, "DEBUG: successfully got fuzzing shared memory\n");
+-
+-    }
+-
+-  } else {
+-
+-    fprintf(stderr, "Error: variable for fuzzing shared memory is not set\n");
+-    send_forkserver_error(FS_ERROR_SHM_OPEN);
+-    exit(1);
+-
+-  }
+-
+-}
+ 
+ /* SHM setup. */
+ 
+@@ -841,240 +772,6 @@ void write_error_with_location(char *text, char *filename, int linenumber) {
+ 
+ }
+ 
+-/* Fork server logic. */
+-
+-static void __afl_start_forkserver(void) {
+-
+-  if (__afl_already_initialized_forkserver) return;
+-  __afl_already_initialized_forkserver = 1;
+-
+-  struct sigaction orig_action;
+-  sigaction(SIGTERM, NULL, &orig_action);
+-  old_sigterm_handler = orig_action.sa_handler;
+-  signal(SIGTERM, at_exit);
+-
+-  u32 already_read_first = 0;
+-  u32 was_killed;
+-  u32 version = 0x41464c00 + FS_NEW_VERSION_MAX;
+-  u32 tmp = version ^ 0xffffffff, status2, status = version;
+-  u8 *msg = (u8 *)&status;
+-  u8 *reply = (u8 *)&status2;
+-
+-  u8 child_stopped = 0;
+-
+-  void (*old_sigchld_handler)(int) = signal(SIGCHLD, SIG_DFL);
+-
+-  /* Phone home and tell the parent that we're OK. If parent isn't there,
+-     assume we're not running in forkserver mode and just execute program. */
+-
+-  // return because possible non-forkserver usage
+-  if (write(FORKSRV_FD + 1, msg, 4) != 4) { return; }
+-
+-  if (read(FORKSRV_FD, reply, 4) != 4) { _exit(1); }
+-  if (tmp != status2) {
+-
+-    write_error("wrong forkserver message from AFL++ tool");
+-    _exit(1);
+-
+-  }
+-
+-  // send the set/requested options to forkserver
+-  status = FS_NEW_OPT_MAPSIZE;  // we always send the map size
+-  if (__afl_sharedmem_fuzzing) { status |= FS_NEW_OPT_SHDMEM_FUZZ; }
+-  if (__afl_dictionary_len && __afl_dictionary) {
+-
+-    status |= FS_NEW_OPT_AUTODICT;
+-
+-  }
+-
+-  if (write(FORKSRV_FD + 1, msg, 4) != 4) { _exit(1); }
+-
+-  // Now send the parameters for the set options, increasing by option number
+-
+-  // FS_NEW_OPT_MAPSIZE - we always send the map size
+-  status = __afl_map_size;
+-  if (write(FORKSRV_FD + 1, msg, 4) != 4) { _exit(1); }
+-
+-  // FS_NEW_OPT_SHDMEM_FUZZ - no data
+-
+-  // FS_NEW_OPT_AUTODICT - send autodictionary
+-  if (__afl_dictionary_len && __afl_dictionary) {
+-
+-    // pass the dictionary through the forkserver FD
+-    u32 len = __afl_dictionary_len, offset = 0;
+-
+-    if (write(FORKSRV_FD + 1, &len, 4) != 4) {
+-
+-      write(2, "Error: could not send dictionary len\n",
+-            strlen("Error: could not send dictionary len\n"));
+-      _exit(1);
+-
+-    }
+-
+-    while (len != 0) {
+-
+-      s32 ret;
+-      ret = write(FORKSRV_FD + 1, __afl_dictionary + offset, len);
+-
+-      if (ret < 1) {
+-
+-        write_error("could not send dictionary");
+-        _exit(1);
+-
+-      }
+-
+-      len -= ret;
+-      offset += ret;
+-
+-    }
+-
+-  }
+-
+-  // send welcome message as final message
+-  status = version;
+-  if (write(FORKSRV_FD + 1, msg, 4) != 4) { _exit(1); }
+-
+-  // END forkserver handshake
+-
+-  __afl_connected = 1;
+-
+-  if (__afl_sharedmem_fuzzing) { __afl_map_shm_fuzz(); }
+-
+-  while (1) {
+-
+-    int status;
+-
+-    /* Wait for parent by reading from the pipe. Abort if read fails. */
+-
+-    if (already_read_first) {
+-
+-      already_read_first = 0;
+-
+-    } else {
+-
+-      if (read(FORKSRV_FD, &was_killed, 4) != 4) {
+-
+-        write_error("read from AFL++ tool");
+-        _exit(1);
+-
+-      }
+-
+-    }
+-
+-#ifdef _AFL_DOCUMENT_MUTATIONS
+-    if (__afl_fuzz_ptr) {
+-
+-      static uint32_t counter = 0;
+-      char            fn[32];
+-      sprintf(fn, "%09u:forkserver", counter);
+-      s32 fd_doc = open(fn, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_PERMISSION);
+-      if (fd_doc >= 0) {
+-
+-        if (write(fd_doc, __afl_fuzz_ptr, *__afl_fuzz_len) != *__afl_fuzz_len) {
+-
+-          fprintf(stderr, "write of mutation file failed: %s\n", fn);
+-          unlink(fn);
+-
+-        }
+-
+-        close(fd_doc);
+-
+-      }
+-
+-      counter++;
+-
+-    }
+-
+-#endif
+-
+-    /* If we stopped the child in persistent mode, but there was a race
+-       condition and afl-fuzz already issued SIGKILL, write off the old
+-       process. */
+-
+-    if (child_stopped && was_killed) {
+-
+-      child_stopped = 0;
+-      if (waitpid(child_pid, &status, 0) < 0) {
+-
+-        write_error("child_stopped && was_killed");
+-        _exit(1);
+-
+-      }
+-
+-    }
+-
+-    if (!child_stopped) {
+-
+-      /* Once woken up, create a clone of our process. */
+-
+-      child_pid = fork();
+-      if (child_pid < 0) {
+-
+-        write_error("fork");
+-        _exit(1);
+-
+-      }
+-
+-      /* In child process: close fds, resume execution. */
+-
+-      if (!child_pid) {
+-
+-        //(void)nice(-20);
+-
+-        signal(SIGCHLD, old_sigchld_handler);
+-        signal(SIGTERM, old_sigterm_handler);
+-
+-        close(FORKSRV_FD);
+-        close(FORKSRV_FD + 1);
+-        return;
+-
+-      }
+-
+-    } else {
+-
+-      /* Special handling for persistent mode: if the child is alive but
+-         currently stopped, simply restart it with SIGCONT. */
+-
+-      kill(child_pid, SIGCONT);
+-      child_stopped = 0;
+-
+-    }
+-
+-    /* In parent process: write PID to pipe, then wait for child. */
+-
+-    if (write(FORKSRV_FD + 1, &child_pid, 4) != 4) {
+-
+-      write_error("write to afl-fuzz");
+-      _exit(1);
+-
+-    }
+-
+-    if (waitpid(child_pid, &status, is_persistent ? WUNTRACED : 0) < 0) {
+-
+-      write_error("waitpid");
+-      _exit(1);
+-
+-    }
+-
+-    /* In persistent mode, the child stops itself with SIGSTOP to indicate
+-       a successful run. In this case, we want to wake it up without forking
+-       again. */
+-
+-    if (WIFSTOPPED(status)) child_stopped = 1;
+-
+-    /* Relay wait status to pipe, then loop back. */
+-
+-    if (write(FORKSRV_FD + 1, &status, 4) != 4) {
+-
+-      write_error("writing to afl-fuzz");
+-      _exit(1);
+-
+-    }
+-
+-  }
+-
+-}
+-
+ /* A simplified persistent mode handler, used as explained in
+  * README.llvm.md. */
+ 
+@@ -1173,75 +870,6 @@ int __afl_persistent_loop(unsigned int max_cnt) {
+ 
+ }
+ 
+-/* This one can be called from user code when deferred forkserver mode
+-    is enabled. */
+-
+-void __afl_manual_init(void) {
+-
+-  static u8 init_done;
+-
+-  if (getenv("AFL_DISABLE_LLVM_INSTRUMENTATION")) {
+-
+-    init_done = 1;
+-    is_persistent = 0;
+-    __afl_sharedmem_fuzzing = 0;
+-    if (__afl_area_ptr == NULL) __afl_area_ptr = __afl_area_ptr_dummy;
+-
+-    if (__afl_debug) {
+-
+-      fprintf(stderr,
+-              "DEBUG: disabled instrumentation because of "
+-              "AFL_DISABLE_LLVM_INSTRUMENTATION\n");
+-
+-    }
+-
+-  }
+-
+-  if (!init_done) {
+-
+-    __afl_start_forkserver();
+-    init_done = 1;
+-
+-  }
+-
+-}
+-
+-/* Initialization of the forkserver - latest possible */
+-
+-__attribute__((constructor())) void __afl_auto_init(void) {
+-
+-  if (__afl_already_initialized_init) { return; }
+-
+-#ifdef __ANDROID__
+-  // Disable handlers in linker/debuggerd, check include/debuggerd/handler.h
+-  signal(SIGABRT, SIG_DFL);
+-  signal(SIGBUS, SIG_DFL);
+-  signal(SIGFPE, SIG_DFL);
+-  signal(SIGILL, SIG_DFL);
+-  signal(SIGSEGV, SIG_DFL);
+-  signal(SIGSTKFLT, SIG_DFL);
+-  signal(SIGSYS, SIG_DFL);
+-  signal(SIGTRAP, SIG_DFL);
+-#endif
+-
+-  __afl_already_initialized_init = 1;
+-
+-  if (getenv("AFL_DISABLE_LLVM_INSTRUMENTATION")) return;
+-
+-  if (getenv(DEFER_ENV_VAR)) return;
+-
+-  __afl_manual_init();
+-
+-}
+-
+-/* Optionally run an early forkserver */
+-
+-__attribute__((constructor(EARLY_FS_PRIO))) void __early_forkserver(void) {
+-
+-  if (getenv("AFL_EARLY_FORKSERVER")) { __afl_auto_init(); }
+-
+-}
+-
+ /* Initialization of the shmem - earliest possible because of LTO fixed mem. */
+ 
+ __attribute__((constructor(CTOR_PRIO))) void __afl_auto_early(void) {
