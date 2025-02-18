@@ -23,9 +23,8 @@ void Libc::Component::construct(Libc::Env &env)
     shm_init(env);
 
     // This configuration should be done in the config of afl-fuzz
-    setenv("AFL_NO_UI", "1", 0);
-    setenv("AFL_SKIP_BIN_CHECK", "1", 0);
-    setenv("AFL_DEBUG_CHILD", "1", 0);
+    setenv("AFL_NO_UI", "1", 1);
+    setenv("AFL_PERSISTENT", "1", 1);
 
     Libc::with_libc([&] () {
         int argc = 7;
@@ -40,7 +39,6 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[5] = strdup("--");
         argv_orig[6] = strdup("/binary/posix_bin");
 
-//        wait_for_continue();
         main(argc, argv_orig, envp);
         Genode::log("afl-fuzz test completed.");
     });
