@@ -1,0 +1,180 @@
+build { core init timer lib/ld
+        lib/libc lib/vfs
+        lib/vfs_jitterentropy
+        lib/vfs_pipe
+        server/vfs
+        server/report_rom
+        afl-fuzz
+        forkserver
+        test/print_component
+        }
+
+import_from_depot [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/libc
+
+create_boot_directory
+
+install_config {
+<config verbose="yes">
+	<parent-provides>
+        <service name="LOG"/>
+        <service name="PD"/>
+        <service name="RM"/>
+        <service name="CPU"/>
+        <service name="ROM"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> </any-service>
+	</default-route>
+	<default caps="350"/>
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+    <start name="vfs" caps="250">
+        <resource name="RAM" quantum="500M"/>
+        <provides> <service name="File_system"/> </provides>
+
+        <config>
+            <vfs>
+                <dir name="dev">
+                    <log/>
+                    <null/>
+                    <dir name="pipe"> <pipe/> </dir>
+                    <inline name="rtc">2025-01-01 01:01</inline>
+                    <jitterentropy name="urandom"/>
+                </dir>
+                <!-- test-cases that lead to crashes are stored here. Might need a way to extract them. -->
+                <dir name="output"> <ram/> </dir>
+                <dir name="input">
+                    <inline name="input-file">content</inline>
+                </dir>
+            </vfs>
+            <default-policy root="/" writeable="yes"/>
+        </config>
+    </start>
+
+    <!-- This component starts the forkserver. afl-fuzz calls fork() + execv() at some point. -->
+    <!-- Instead the forkserver should be started using this report_rom. -->
+    <start name="startup_report_rom">
+        <binary name="report_rom"/>
+        <resource name="RAM" quantum="2M"/>
+        <provides>
+            <service name="Report"/>
+            <service name="ROM"/>
+        </provides>
+        <config verbose="yes">
+            <policy label="startup_init -> config" report="afl-fuzz -> config"/>
+        </config>
+    </start>
+
+    <!-- Execution of afl-fuzz. Initializes forkserver through startup_init -->
+    <start name="afl-fuzz">
+		<resource name="RAM" quantum="1500M"/>
+		<provides> <service name="Shm_Session"/> </provides>
+        <config>
+            <vfs> <fs/> </vfs>
+            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
+        </config>
+        <route>
+            <service name="File_system"> <child name="vfs" /> </service>
+            <service name="Report" label="config"> <child name="startup_report_rom"/> </service>
+            <service name="Timer"> <child name="timer" /> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+	</start>
+
+
+    <!-- This init component starts the forkserver, which requires the same VFS as afl-fuzz to communicate. -->
+	<start name="startup_init" caps="100">
+        <binary name="init" />
+        <resource name="RAM" quantum="150M"/>
+
+        <!-- #### START #### -->
+        <!-- Config to be defined by afl-fuzz and reported to startup_init -->
+        <config>
+
+            <!-- Responsible for starting and reporting the children of forkserver (instead of fork() and execv()) -->
+            <start name="runtime_report_rom">
+                <!-- Maybe this should be a "monitor" ? -->
+                <binary name="report_rom"/>
+                <resource name="RAM" quantum="2M"/>
+                <provides>
+                    <service name="Report"/>
+                    <service name="ROM"/>
+                </provides>
+                <config verbose="yes">
+                    <policy label="runtime_init -> config" report="forkserver -> config"/>
+                    <!-- TODO: This policy should give the forkserver the status of the running children from runtime_init -->
+
+                    <policy label="forkserver -> status" report="runtime_init -> status"/>
+                </config>
+            </start>
+
+            <!-- AFL++ logic: interface between the SUT and afl-fuzz. Communicates with afl-fuzz using pipes. -->
+            <start name="forkserver">
+                <resource name="RAM" quantum="500M"/>
+                <config>
+                    <vfs> <fs/> </vfs>
+                    <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
+                </config>
+                <route>
+                    <service name="File_system"> <parent/> </service>
+                    <service name="Shm_session"> <parent/> </service>
+                    <service name="Report" label="config"> <child name="runtime_report_rom"/> </service>
+                    <service name="Timer"> <parent/> </service>
+                    <any-service> <parent/> </any-service>
+                </route>
+            </start>
+
+            <start name="runtime_init" caps="100">
+                <binary name="init" />
+                <resource name="RAM" quantum="150M"/>
+
+                <config>
+                    <!-- This is the SUT. In this case a trivial component that prints something to the log-session -->
+                    <start name="print_component">
+                        <resource name="RAM" quantum="50M"/>
+                    </start>
+                </config>
+
+                <route>
+                    <service name="File_system"> <parent/> </service>
+                    <service name="Shm_session"> <parent/> </service>
+                    <service name="ROM" label="config"> <child name="runtime_report_rom" /> </service>
+                    <service name="Timer"> <parent/> </service>
+                    <service name="CPU"> <parent/> </service>
+                    <service name="LOG"> <parent/> </service>
+                    <service name="PD"> <parent/> </service>
+                    <service name="RM"> <parent/> </service>
+                    <service name="ROM"> <parent/> </service>
+                </route>
+            </start>
+        </config>
+        <!-- #### END #### -->
+
+
+        <route>
+            <service name="File_system"> <child name="vfs" /> </service>
+            <service name="Shm_session"> <child name="afl-fuzz" /> </service>
+            <service name="ROM" label="config"> <child name="startup_report_rom" /> </service>
+            <service name="Timer"> <child name="timer" /> </service>
+            <service name="CPU"> <parent/> </service>
+            <service name="LOG"> <parent/> </service>
+            <service name="PD"> <parent/> </service>
+            <service name="RM"> <parent/> </service>
+            <service name="ROM"> <parent/> </service>
+        </route>
+	</start>
+
+
+
+</config>}
+
+build_boot_image [list {*}[build_artifacts]]
+append qemu_args " -nographic "
+
+run_genode_until forever
