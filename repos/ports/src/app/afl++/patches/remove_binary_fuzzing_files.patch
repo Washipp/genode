@@ -1,0 +1,387 @@
+diff --git a/src/afl-fuzz.c b/src/afl-fuzz.c
+index 8df99773..a3c13e8b 100644
+--- a/src/afl-fuzz.c
++++ b/src/afl-fuzz.c
+@@ -434,50 +434,6 @@ static int stricmp(char const *a, char const *b) {
+ 
+ }
+ 
+-static void fasan_check_afl_preload(char *afl_preload) {
+-
+-  char   first_preload[PATH_MAX + 1] = {0};
+-  char  *separator = strchr(afl_preload, ':');
+-  size_t first_preload_len = PATH_MAX;
+-  char  *basename;
+-  char   clang_runtime_prefix[] = "libclang_rt.asan";
+-
+-  if (separator != NULL && (separator - afl_preload) < PATH_MAX) {
+-
+-    first_preload_len = separator - afl_preload;
+-
+-  }
+-
+-  strncpy(first_preload, afl_preload, first_preload_len);
+-
+-  basename = strrchr(first_preload, '/');
+-  if (basename == NULL) {
+-
+-    basename = first_preload;
+-
+-  } else {
+-
+-    basename = basename + 1;
+-
+-  }
+-
+-  if (strncmp(basename, clang_runtime_prefix,
+-              sizeof(clang_runtime_prefix) - 1) != 0) {
+-
+-    FATAL("Address Sanitizer DSO must be the first DSO in AFL_PRELOAD");
+-
+-  }
+-
+-  if (access(first_preload, R_OK) != 0) {
+-
+-    FATAL("Address Sanitizer DSO not found");
+-
+-  }
+-
+-  OKF("Found ASAN DSO: %s", first_preload);
+-
+-}
+-
+ /* Main entry point */
+ 
+ int main(int argc, char **argv_orig, char **envp) {
+@@ -490,7 +446,6 @@ int main(int argc, char **argv_orig, char **envp) {
+   u8  mem_limit_given = 0, exit_1 = 0, debug = 0,
+      extras_dir_cnt = 0 /*, have_p = 0*/;
+   char  *afl_preload;
+-  char  *frida_afl_preload = NULL;
+   char **use_argv;
+ 
+   struct timeval  tv;
+@@ -1041,30 +996,6 @@ int main(int argc, char **argv_orig, char **envp) {
+         afl->use_banner = optarg;
+         break;
+ 
+-  #ifdef __linux__
+-      case 'X':                                                 /* NYX mode */
+-
+-        if (afl->fsrv.nyx_mode) { FATAL("Multiple -X options not supported"); }
+-
+-        afl->fsrv.nyx_parent = true;
+-        afl->fsrv.nyx_standalone = true;
+-        afl->fsrv.nyx_mode = 1;
+-        afl->fsrv.nyx_id = 0;
+-
+-        break;
+-
+-      case 'Y':                                     /* NYX distributed mode */
+-        if (afl->fsrv.nyx_mode) { FATAL("Multiple -Y options not supported"); }
+-
+-        afl->fsrv.nyx_mode = 1;
+-
+-        break;
+-  #else
+-      case 'X':
+-      case 'Y':
+-        FATAL("Nyx mode is only availabe on linux...");
+-        break;
+-  #endif
+       case 'A':                                           /* CoreSight mode */
+ 
+   #if !defined(__aarch64__) || !defined(__linux__)
+@@ -1083,55 +1014,6 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+         break;
+ 
+-      case 'O':                                               /* FRIDA mode */
+-
+-        if (afl->fsrv.frida_mode) {
+-
+-          FATAL("Multiple -O options not supported");
+-
+-        }
+-
+-        afl->fsrv.frida_mode = 1;
+-        if (get_afl_env("AFL_USE_FASAN")) { afl->fsrv.frida_asan = 1; }
+-
+-        break;
+-
+-      case 'Q':                                                /* QEMU mode */
+-
+-        if (afl->fsrv.qemu_mode) { FATAL("Multiple -Q options not supported"); }
+-
+-        afl->fsrv.qemu_mode = 1;
+-
+-        if (!mem_limit_given) { afl->fsrv.mem_limit = MEM_LIMIT_QEMU; }
+-
+-        break;
+-
+-      case 'N':                                             /* Unicorn mode */
+-
+-        if (afl->no_unlink) { FATAL("Multiple -N options not supported"); }
+-        afl->fsrv.no_unlink = (afl->no_unlink = true);
+-
+-        break;
+-
+-      case 'U':                                             /* Unicorn mode */
+-
+-        if (afl->unicorn_mode) { FATAL("Multiple -U options not supported"); }
+-        afl->unicorn_mode = 1;
+-
+-        if (!mem_limit_given) { afl->fsrv.mem_limit = MEM_LIMIT_UNICORN; }
+-
+-        break;
+-
+-      case 'W':                                           /* Wine+QEMU mode */
+-
+-        if (afl->use_wine) { FATAL("Multiple -W options not supported"); }
+-        afl->fsrv.qemu_mode = 1;
+-        afl->use_wine = 1;
+-
+-        if (!mem_limit_given) { afl->fsrv.mem_limit = 0; }
+-
+-        break;
+-
+       case 'V': {
+ 
+         afl->most_time_key = 1;
+@@ -1494,56 +1376,6 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   }
+ 
+-  #ifdef __linux__
+-  if (afl->fsrv.nyx_mode) {
+-
+-    if (afl->fsrv.nyx_standalone && strcmp(afl->sync_id, "default") != 0) {
+-
+-      FATAL(
+-          "distributed fuzzing is not supported in this Nyx mode (use -Y "
+-          "instead)");
+-
+-    }
+-
+-    if (!afl->fsrv.nyx_standalone) {
+-
+-      if (afl->is_main_node) {
+-
+-        if (strcmp("0", afl->sync_id) != 0) {
+-
+-          FATAL(
+-              "for Nyx -Y mode, the Main (-M) parameter has to be set to 0 (-M "
+-              "0)");
+-
+-        }
+-
+-        afl->fsrv.nyx_parent = true;
+-        afl->fsrv.nyx_id = 0;
+-
+-      }
+-
+-      if (afl->is_secondary_node) {
+-
+-        long nyx_id = strtol(afl->sync_id, NULL, 10);
+-
+-        if (nyx_id == 0 || nyx_id == LONG_MAX) {
+-
+-          FATAL(
+-              "for Nyx -Y mode, the Secondary (-S) parameter has to be a "
+-              "numeric value and >= 1 (e.g. -S 1)");
+-
+-        }
+-
+-        afl->fsrv.nyx_id = nyx_id;
+-
+-      }
+-
+-    }
+-
+-  }
+-
+-  #endif
+-
+   if (afl->sync_id) {
+ 
+     if (strlen(afl->sync_id) > 50) {
+@@ -1816,28 +1648,8 @@ int main(int argc, char **argv_orig, char **envp) {
+   afl->fsrv.use_fauxsrv = afl->non_instrumented_mode == 1 || afl->no_forkserver;
+   afl->fsrv.max_length = afl->max_length;
+ 
+-  #ifdef __linux__
+-  if (!afl->fsrv.nyx_mode) {
+-
+-    check_crash_handling();
+-    check_cpu_governor(afl);
+-
+-  } else {
+-
+-    u8 *libnyx_binary = find_afl_binary(argv[0], "libnyx.so");
+-    afl->fsrv.nyx_handlers = afl_load_libnyx_plugin(libnyx_binary);
+-    if (afl->fsrv.nyx_handlers == NULL) {
+-
+-      FATAL("failed to initialize libnyx.so...");
+-
+-    }
+-
+-  }
+-
+-  #else
+   check_crash_handling();
+   check_cpu_governor(afl);
+-  #endif
+ 
+   #ifdef __APPLE__
+   setenv("DYLD_NO_PIE", "1", 0);
+@@ -1853,65 +1665,10 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   if (afl->afl_env.afl_preload) {
+ 
+-    if (afl->fsrv.qemu_mode) {
+-
+-      /* afl-qemu-trace takes care of converting AFL_PRELOAD. */
+-
+-    } else if (afl->fsrv.frida_mode) {
+-
+-      afl_preload = getenv("AFL_PRELOAD");
+-      u8 *frida_binary = find_afl_binary(argv[0], "afl-frida-trace.so");
+-      OKF("Injecting %s ...", frida_binary);
+-      if (afl_preload) {
+-
+-        if (afl->fsrv.frida_asan) {
+-
+-          OKF("Using Frida Address Sanitizer Mode");
+-
+-          fasan_check_afl_preload(afl_preload);
+-
+-          setenv("ASAN_OPTIONS", "detect_leaks=false", 1);
+-
+-        }
+-
+-        u8 *frida_binary = find_afl_binary(argv[0], "afl-frida-trace.so");
+-        OKF("Injecting %s ...", frida_binary);
+-        frida_afl_preload = alloc_printf("%s:%s", afl_preload, frida_binary);
+-
+-        ck_free(frida_binary);
++    /* CoreSight mode uses the default behavior. */
+ 
+-        setenv("LD_PRELOAD", frida_afl_preload, 1);
+-        setenv("DYLD_INSERT_LIBRARIES", frida_afl_preload, 1);
+-
+-      }
+-
+-    } else {
+-
+-      /* CoreSight mode uses the default behavior. */
+-
+-      setenv("LD_PRELOAD", getenv("AFL_PRELOAD"), 1);
+-      setenv("DYLD_INSERT_LIBRARIES", getenv("AFL_PRELOAD"), 1);
+-
+-    }
+-
+-  } else if (afl->fsrv.frida_mode) {
+-
+-    if (afl->fsrv.frida_asan) {
+-
+-      OKF("Using Frida Address Sanitizer Mode");
+-      FATAL(
+-          "Address Sanitizer DSO must be loaded using AFL_PRELOAD in Frida "
+-          "Address Sanitizer Mode");
+-
+-    } else {
+-
+-      u8 *frida_binary = find_afl_binary(argv[0], "afl-frida-trace.so");
+-      OKF("Injecting %s ...", frida_binary);
+-      setenv("LD_PRELOAD", frida_binary, 1);
+-      setenv("DYLD_INSERT_LIBRARIES", frida_binary, 1);
+-      ck_free(frida_binary);
+-
+-    }
++    setenv("LD_PRELOAD", getenv("AFL_PRELOAD"), 1);
++    setenv("DYLD_INSERT_LIBRARIES", getenv("AFL_PRELOAD"), 1);
+ 
+   }
+ 
+@@ -2210,59 +1967,7 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   afl->start_time = get_cur_time();
+ 
+-  if (afl->fsrv.qemu_mode) {
+-
+-    if (afl->use_wine) {
+-
+-      use_argv = get_wine_argv(argv[0], &afl->fsrv.target_path, argc - optind,
+-                               argv + optind);
+-
+-    } else {
+-
+-      use_argv = get_qemu_argv(argv[0], &afl->fsrv.target_path, argc - optind,
+-                               argv + optind);
+-
+-    }
+-
+-  } else if (afl->fsrv.cs_mode) {
+-
+-    use_argv = get_cs_argv(argv[0], &afl->fsrv.target_path, argc - optind,
+-                           argv + optind);
+-
+-  } else {
+-
+-    use_argv = argv + optind;
+-
+-  }
+-
+-  if (afl->non_instrumented_mode || afl->fsrv.qemu_mode ||
+-      afl->fsrv.frida_mode || afl->fsrv.cs_mode || afl->unicorn_mode) {
+-
+-    u32 old_map_size = map_size;
+-    map_size = afl->fsrv.real_map_size = afl->fsrv.map_size = MAP_SIZE;
+-    afl->virgin_bits = ck_realloc(afl->virgin_bits, map_size);
+-    afl->virgin_tmout = ck_realloc(afl->virgin_tmout, map_size);
+-    afl->virgin_crash = ck_realloc(afl->virgin_crash, map_size);
+-    afl->var_bytes = ck_realloc(afl->var_bytes, map_size);
+-    afl->top_rated = ck_realloc(afl->top_rated, map_size * sizeof(void *));
+-    afl->clean_trace = ck_realloc(afl->clean_trace, map_size);
+-    afl->clean_trace_custom = ck_realloc(afl->clean_trace_custom, map_size);
+-    afl->first_trace = ck_realloc(afl->first_trace, map_size);
+-    afl->map_tmp_buf = ck_realloc(afl->map_tmp_buf, map_size);
+-
+-    if (old_map_size < map_size) {
+-
+-      memset(afl->var_bytes + old_map_size, 0, map_size - old_map_size);
+-      memset(afl->top_rated + old_map_size, 0, map_size - old_map_size);
+-      memset(afl->clean_trace + old_map_size, 0, map_size - old_map_size);
+-      memset(afl->clean_trace_custom + old_map_size, 0,
+-             map_size - old_map_size);
+-      memset(afl->first_trace + old_map_size, 0, map_size - old_map_size);
+-      memset(afl->map_tmp_buf + old_map_size, 0, map_size - old_map_size);
+-
+-    }
+-
+-  }
++  use_argv = argv + optind;
+ 
+   afl->argv = use_argv;
+   afl->fsrv.trace_bits =
+@@ -3050,8 +2755,6 @@ stop_fuzzing:
+ 
+   }
+ 
+-  if (frida_afl_preload) { ck_free(frida_afl_preload); }
+-
+   fclose(afl->fsrv.plot_file);
+ 
+   #ifdef INTROSPECTION
+diff --git a/src/afl-fuzz.c b/src/afl-fuzz.c
+index a3c13e8b..a3a32a73 100644
+--- a/src/afl-fuzz.c
++++ b/src/afl-fuzz.c
+@@ -445,7 +445,6 @@ int main(int argc, char **argv_orig, char **envp) {
+   u8 *extras_dir[4];
+   u8  mem_limit_given = 0, exit_1 = 0, debug = 0,
+      extras_dir_cnt = 0 /*, have_p = 0*/;
+-  char  *afl_preload;
+   char **use_argv;
+ 
+   struct timeval  tv;

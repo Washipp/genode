@@ -32,9 +32,17 @@ test_deps:
 	@test -d `$(CC) -print-file-name=plugin`/include || ( echo "[-] Oops, can't find gcc header files. Be sure to install 'gcc-X-plugin-dev'."; exit 1 )
 	@echo "[+] All set and ready to build."
 
+# Optionally remove all binary instrumentation directories to make the directory lighter.
+remove_binary_instrumentation_directories:
+	@rm -rf ${DIR(afl++)}/coresight_mode
+	@rm -rf ${DIR(afl++)}/frida_mode
+	@rm -rf ${DIR(afl++)}/nyx_mode
+	@rm -rf ${DIR(afl++)}/qemu_mode
+	@rm -rf ${DIR(afl++)}/unicorn_mode
+
 
 default : build_gcc_plugin
-build_gcc_plugin: $(DOWNLOAD) test_deps
+build_gcc_plugin: $(DOWNLOAD) test_deps remove_binary_instrumentation_directories
 	$(CXX) $(CXX_FLAGS) $(PLUGIN_FLAGS) -shared ${DIR(afl++)}/instrumentation/afl-gcc-pass.so.cc -o ${DIR(afl++)}/afl-gcc-pass.so
 
 
