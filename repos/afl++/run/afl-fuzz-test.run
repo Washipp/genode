@@ -109,7 +109,6 @@ install_config {
                 <config verbose="yes">
                     <policy label="runtime_init -> config" report="forkserver -> config"/>
                     <!-- TODO: This policy should give the forkserver the status of the running children from runtime_init -->
-
                     <policy label="forkserver -> status" report="runtime_init -> status"/>
                 </config>
             </start>
@@ -168,7 +167,7 @@ install_config {
             <service name="RM"> <parent/> </service>
             <service name="ROM"> <parent/> </service>
         </route>
-	</start>
+    </start>
 
 
 
