@@ -1,0 +1,10 @@
+TARGET = forkserver
+SRC_CC += forkserver.cc
+LIBS += base libc
+
+INC_DIR += $(REP_DIR)/include/shm
+
+AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
+INC_DIR += $(AFL++_DIR)/include
+
+CC_C_OPT += -O3 -Wall -Wno-pointer-sign -Wno-unused-function -Wno-unused-result -fPIC
