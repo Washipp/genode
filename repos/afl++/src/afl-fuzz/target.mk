@@ -1,6 +1,6 @@
 TARGET = afl-fuzz
-SRC_CC += main.cc shm_server.cc math.cc unistd.cc resource.cc
-LIBS += base libc
+SRC_CC += main.cc shm_server.cc unistd.cc
+LIBS += base libc libm
 
 INC_DIR += $(REP_DIR)/include/afl_libc
 INC_DIR += $(REP_DIR)/include/shm
@@ -23,9 +23,6 @@ CC_C_OPT += -Wno-format-truncation -g -Wno-pointer-sign -Wno-variadic-macros -Wa
 SPECIAL_PERFORMANCE = #-DHAVE_ZLIB
 
 SRC_C += afl-performance.c afl-common.c afl-forkserver.c afl-sharedmem.c
-
-# Unneeded fuzz files. They contain extra functionality that we do not care about.
-NOT_REQUIRED += afl-fuzz-extras.c afl-fuzz-mutators.c afl-fuzz-python.c afl-fuzz-statsd.c
 
 AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
 SRC_C += $(AFL_FUZZ_FILES)
