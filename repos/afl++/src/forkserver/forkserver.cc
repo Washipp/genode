@@ -1,3 +1,6 @@
+/* afl++ port includes */
+#include "sys/shm.h"
+
 /* Genode includes */
 #include <libc/component.h>
 #include <base/log.h>
@@ -21,16 +24,20 @@ namespace Forkserver {
 
 class Forkserver::Main {
     Libc::Env &_env;
+
+    Genode::Attached_rom_dataspace _config_rom { _env, "config" };
+
+    int _st_pipe_0 { _config_rom.xml().attribute_value("st_pipe_0", 0) };
+    int _ctl_pipe_1 { _config_rom.xml().attribute_value("ctl_pipe_1", 0) };
+    int _out_fd { _config_rom.xml().attribute_value("out_fd", 0) };
+    int _coverage_map_shmid { _config_rom.xml().attribute_value("coverage_map_shmid", 0) };
+    int _fuzzing_shmid { _config_rom.xml().attribute_value("fuzzing_shmid", 0) };
+
     // Through this reporter new SUTs can be started.
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
     int _version { 0 };
 
-
-    int afl_sharedmem_fuzzing = 1;
-    u32 afl_map_size = MAP_SIZE;
-
-
-    // TODO: this report should be provided by a user.
+    // TODO: this report should be provided by a user somehow.
     // Further, the child needs to be instrumented by adding the afl++ as a LIBS dependency.
     int _report_new_sut()
     {
@@ -120,7 +127,7 @@ public:
     /**
      * Instead of transferring the child_id we transfer the version of the component, as it uniquely identifies the child.
      * */
-    void afl_start_forkserver(void)
+    int afl_start_forkserver(void)
     {
         u32 was_killed = 0;
         u32 version = 0x41464c00 + FS_NEW_VERSION_MAX;
@@ -132,34 +139,30 @@ public:
         // START forkserver handshake
 
         // return because possible non-forkserver usage
-        if (write(FORKSRV_FD + 1, msg, 4) != 4) { return; }
+        if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
-        if (read(FORKSRV_FD, reply, 4) != 4) { _env.parent().exit(1); }
+        if (read(FORKSRV_FD, reply, 4) != 4) { return 1; }
         if (tmp != status2) {
             write_error("wrong forkserver message from AFL++ tool");
-            _env.parent().exit(1);
+            return 1;
         }
 
         // send the set/requested options to forkserver
         status = FS_NEW_OPT_MAPSIZE;  // we always send the map size
-        if (afl_sharedmem_fuzzing) { status |= FS_NEW_OPT_SHDMEM_FUZZ; }
+        status |= FS_NEW_OPT_SHDMEM_FUZZ; // we always use shared memory fuzzing
 /*
         if (__afl_dictionary_len && __afl_dictionary) {
             status |= FS_NEW_OPT_AUTODICT;
         }
 */
 
-        if (write(FORKSRV_FD + 1, msg, 4) != 4) { _env.parent().exit(1); }
+        if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
         // Now send the parameters for the set options, increasing by option number
 
-        // FS_NEW_OPT_MAPSIZE - we always send the map size
-        status = afl_map_size;
-        if (write(FORKSRV_FD + 1, msg, 4) != 4) { _env.parent().exit(1); }
+        status = MAP_SIZE;
+        if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
-        // FS_NEW_OPT_SHDMEM_FUZZ - no data
-
-        // FS_NEW_OPT_AUTODICT - send autodictionary
 /*
          * ### For now, we do not support afl-dictionaries. This would need to be defined here.
          * ### But we still need to write it maybe?
@@ -190,13 +193,9 @@ public:
 */
         // send welcome message as final message
         status = version;
-        if (write(FORKSRV_FD + 1, msg, 4) != 4) { _env.parent().exit(1); }
+        if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
         // END forkserver handshake
-
-        if (afl_sharedmem_fuzzing) {
-            Genode::log("Using shared memory. The setup should be done by child. See '__afl_map_shm_fuzz()'");
-        }
 
         while (true) {
             int status;
@@ -204,9 +203,8 @@ public:
             /* Wait for parent by reading from the pipe. Abort if read fails. */
             if (read(FORKSRV_FD, &was_killed, 4) != 4) {
                 write_error("read from AFL++ tool");
-                _env.parent().exit(1);
+                return 1;
             }
-
 
             /* Once woken up, start a new SUT component. */
 
@@ -216,27 +214,51 @@ public:
 
             if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
                 write_error("write to afl-fuzz");
-                _env.parent().exit(1);
+                return 1;
             }
 
             if (unlikely(_wait_for_exit(child_pid, &status))) {
                 write_error("_wait_for_exit");
-                _env.parent().exit(1);
+                return 1;
             }
-
 
             /* Relay wait status to pipe, then loop back. */
 
             if (unlikely(write(FORKSRV_FD + 1, &status, 4) != 4)) {
                 write_error("writing to afl-fuzz");
-                _env.parent().exit(1);
+                return 1;
             }
+        }
+    }
+
+    /**
+     * The logic of this function comes from afl-fuzz and is executed once fork() is called.
+     * Here we first start the forkserver (this component) and then setup the necessary pipes.
+     * */
+    void init_forkserver() {
+        dup2(_out_fd, 0);
+
+        /* Set up control and status pipes, close the unneeded original fds. */
+
+        if (dup2(_st_pipe_0, FORKSRV_FD) < 0) { Genode::error("dup2() failed"); }
+        if (dup2(_ctl_pipe_1, FORKSRV_FD + 1) < 0) { Genode::error("dup2() failed"); }
+
+        int exit_code = afl_start_forkserver();
+
+        if(exit_code) {
+            /* Use a distinctive bitmap signature to tell the parent about the report falling through. */
+            auto *trace_bits = static_cast<unsigned int *>(shmat(_coverage_map_shmid, NULL, 0));
+            *(unsigned int *) trace_bits = EXEC_FAIL_SIG;
+            write_error("Error: starting forkserver failed.\n");
+            _env.parent().exit(exit_code);
         }
     }
 
     Main(Libc::Env &env) : _env(env)
     {
-        afl_start_forkserver();
+        Libc::with_libc([&] () {
+            init_forkserver();
+        });
     }
 };
 
