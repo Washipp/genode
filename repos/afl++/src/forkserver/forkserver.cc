@@ -25,59 +25,125 @@ namespace Forkserver {
 class Forkserver::Main {
     Libc::Env &_env;
 
-    Genode::Attached_rom_dataspace _config_rom { _env, "config" };
-
+    Attached_rom_dataspace _config_rom { _env, "config" };
     int _st_pipe_0 { _config_rom.xml().attribute_value("st_pipe_0", 0) };
     int _ctl_pipe_1 { _config_rom.xml().attribute_value("ctl_pipe_1", 0) };
     int _out_fd { _config_rom.xml().attribute_value("out_fd", 0) };
     int _coverage_map_shmid { _config_rom.xml().attribute_value("coverage_map_shmid", 0) };
     int _fuzzing_shmid { _config_rom.xml().attribute_value("fuzzing_shmid", 0) };
 
-    // Through this reporter new SUTs can be started.
+    /* Reporter starts new SUT */
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
     int _version { 0 };
+
+    /* ROM reads status update from reporter. */
+    Attached_rom_dataspace _state_rom { _env, "state" };
+    Signal_handler<Main> _state_rom_handler { _env.ep(), *this, &Main::_handle_status_update };
 
     // TODO: this report should be provided by a user somehow.
     // Further, the child needs to be instrumented by adding the afl++ as a LIBS dependency.
     int _report_new_sut()
     {
-        _init_config_reporter.generate([&] (Xml_generator & xml) {
-            xml.node("parent-provides",[&] () {
-                xml.node("service",[&] () { xml.attribute("name", "CPU"); });
-                xml.node("service",[&] () { xml.attribute("name", "File_system"); });
-                xml.node("service",[&] () { xml.attribute("name", "LOG"); });
-                xml.node("service",[&] () { xml.attribute("name", "PD"); });
-                xml.node("service",[&] () { xml.attribute("name", "RM"); });
-                xml.node("service",[&] () { xml.attribute("name", "ROM"); });
-                xml.node("service",[&] () { xml.attribute("name", "Timer"); });
-                xml.node("service",[&] () { xml.attribute("name", "Shm_session"); });
+        _init_config_reporter.generate([&](Xml_generator &xml) {
+            xml.node("parent-provides", [&]() {
+                xml.node("service", [&]() { xml.attribute("name", "CPU"); });
+                xml.node("service", [&]() { xml.attribute("name", "File_system"); });
+                xml.node("service", [&]() { xml.attribute("name", "LOG"); });
+                xml.node("service", [&]() { xml.attribute("name", "PD"); });
+                xml.node("service", [&]() { xml.attribute("name", "RM"); });
+                xml.node("service", [&]() { xml.attribute("name", "ROM"); });
+                xml.node("service", [&]() { xml.attribute("name", "Timer"); });
+                xml.node("service", [&]() { xml.attribute("name", "Shm_session"); });
             });
-            xml.node("start",[&] () {
+            xml.node("start", [&]() {
                 xml.attribute("name", "print_component");
                 xml.attribute("caps", "50");
                 xml.attribute("version", ++_version);
-                xml.node("resource",[&] () { xml.attribute("name", "RAM"); xml.attribute("quantum", "64M"); });
+                xml.node("resource", [&]() {
+                    xml.attribute("name", "RAM");
+                    xml.attribute("quantum", "64M");
+                });
+                xml.node("heartbeat", [&]() { });
 
-                xml.node("route",[&] () {
-                    xml.node("service",[&] () { xml.attribute("name", "CPU"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "File_system"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "LOG"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "PD"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "RM"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "ROM"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "Timer"); xml.node("parent",[&] () {}); });
-                    xml.node("service",[&] () { xml.attribute("name", "Shm_session"); xml.node("parent",[&] () {}); });
+                xml.node("route", [&]() {
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "CPU");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "File_system");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "LOG");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "PD");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "RM");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "ROM");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "Timer");
+                        xml.node("parent", [&]() { });
+                    });
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "Shm_session");
+                        xml.node("parent", [&]() { });
+                    });
                 });
             });
         });
         return _version;
     }
 
-    // TODO: Check the status of the child, until the status changes or the heartbeat stops.
-    int _wait_for_exit(int child_pid, int *status) {
-        Genode::warning("Not implemented. Should wait for the component with version: '", child_pid,"' to finish.");
-        (void) status;
-        return 0;
+    void _handle_status_update()
+    {
+        int status;
+        u32 was_killed = 0;
+        u32 child_pid = -1;
+        _state_rom.update();
+        const Xml_node cfg = _state_rom.xml();
+        Genode::log(cfg);
+        if (!cfg.has_type("empty")) {
+            // TODO: read the status? and exit code somehow from CFG? and then translate it to a POSIX status.
+            status = 0;
+
+            /* Relay wait status to afl-fuzz via pipe */
+            if (unlikely(write(FORKSRV_FD + 1, &status, 4) != 4)) {
+                write_error("writing to afl-fuzz");
+                _env.parent().exit(1);
+            }
+
+            /* Reset status. */
+            status = 0;
+
+            /* Wait for parent by reading from the pipe. Abort if read fails. */
+            if (read(FORKSRV_FD, &was_killed, 4) != 4) {
+                write_error("read from AFL++ tool");
+                _env.parent().exit(1);
+            }
+
+            /* Once woken up, start a new SUT component. */
+            child_pid = _report_new_sut();
+
+            /* In parent process: write PID to pipe, then wait for new signal update. */
+            if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
+                write_error("write to afl-fuzz");
+                _env.parent().exit(1);
+            }
+
+        } else {
+            write_error("Error while reading status update. XML of the update:");
+            write_error(cfg);
+        }
     }
 
 public:
@@ -125,7 +191,10 @@ public:
 */
 
     /**
-     * Instead of transferring the child_id we transfer the version of the component, as it uniquely identifies the child.
+     * AFL++ normally implements the forkserver using a while(1) loop. Here we use the signal handling of the report_rom.
+     * So each new loop begins with a signal.
+     * Further, instead of transferring the child_id we transfer the version of the component,
+     * as it uniquely identifies the child.
      * */
     int afl_start_forkserver(void)
     {
@@ -138,7 +207,7 @@ public:
 
         // START forkserver handshake
 
-        // return because possible non-forkserver usage
+        /* return because possible non-forkserver usage */
         if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
         if (read(FORKSRV_FD, reply, 4) != 4) { return 1; }
@@ -147,7 +216,7 @@ public:
             return 1;
         }
 
-        // send the set/requested options to forkserver
+        /* send the set/requested options to forkserver */
         status = FS_NEW_OPT_MAPSIZE;  // we always send the map size
         status |= FS_NEW_OPT_SHDMEM_FUZZ; // we always use shared memory fuzzing
 /*
@@ -158,8 +227,7 @@ public:
 
         if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
-        // Now send the parameters for the set options, increasing by option number
-
+        /* Now send the parameters for the set options, increasing by option number */
         status = MAP_SIZE;
         if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
@@ -191,51 +259,37 @@ public:
             }
           }
 */
-        // send welcome message as final message
+
+        /* send welcome message as final message  */
         status = version;
         if (write(FORKSRV_FD + 1, msg, 4) != 4) { return 1; }
 
         // END forkserver handshake
 
-        while (true) {
-            int status;
-
-            /* Wait for parent by reading from the pipe. Abort if read fails. */
-            if (read(FORKSRV_FD, &was_killed, 4) != 4) {
-                write_error("read from AFL++ tool");
-                return 1;
-            }
-
-            /* Once woken up, start a new SUT component. */
-
-            child_pid = _report_new_sut();
-
-            /* In parent process: write PID to pipe, then wait for child. */
-
-            if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
-                write_error("write to afl-fuzz");
-                return 1;
-            }
-
-            if (unlikely(_wait_for_exit(child_pid, &status))) {
-                write_error("_wait_for_exit");
-                return 1;
-            }
-
-            /* Relay wait status to pipe, then loop back. */
-
-            if (unlikely(write(FORKSRV_FD + 1, &status, 4) != 4)) {
-                write_error("writing to afl-fuzz");
-                return 1;
-            }
+        /* Wait for parent by reading from the pipe. Abort if read fails. */
+        if (read(FORKSRV_FD, &was_killed, 4) != 4) {
+            write_error("read from AFL++ tool");
+            return 1;
         }
+
+        /* Once woken up, start a new SUT component. */
+        child_pid = _report_new_sut();
+
+        /* Write PID to the afl-fuzz forkserver via pipe. */
+        if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
+            write_error("write to afl-fuzz");
+            return 1;
+        }
+
+        return 0;
     }
 
     /**
      * The logic of this function comes from afl-fuzz and is executed once fork() is called.
      * Here we first start the forkserver (this component) and then setup the necessary pipes.
      * */
-    void init_forkserver() {
+    void init_forkserver()
+    {
         dup2(_out_fd, 0);
 
         /* Set up control and status pipes, close the unneeded original fds. */
@@ -245,8 +299,8 @@ public:
 
         int exit_code = afl_start_forkserver();
 
-        if(exit_code) {
-            /* Use a distinctive bitmap signature to tell the parent about the report falling through. */
+        if (exit_code) {
+            /* Use a distinctive bitmap signature to tell the parent about the report failing. */
             auto *trace_bits = static_cast<unsigned int *>(shmat(_coverage_map_shmid, NULL, 0));
             *(unsigned int *) trace_bits = EXEC_FAIL_SIG;
             write_error("Error: starting forkserver failed.\n");
@@ -256,9 +310,10 @@ public:
 
     Main(Libc::Env &env) : _env(env)
     {
-        Libc::with_libc([&] () {
+        Libc::with_libc([&]() {
             init_forkserver();
         });
+        _state_rom.sigh(_state_rom_handler);
     }
 };
 
