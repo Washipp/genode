@@ -54,6 +54,7 @@ public:
                     // Report ROM
                     xml.node("start",[&] () {
                         xml.attribute("name", "runtime_report_rom");
+                        xml.attribute("verbose", "yes");
                         xml.node("binary",[&] () { xml.attribute("name", "report_rom"); });
                         xml.node("resource",[&] () { xml.attribute("name", "RAM"); xml.attribute("quantum", "4M"); });
                         xml.node("provides",[&] () {
@@ -62,7 +63,7 @@ public:
                         });
                         xml.node("config",[&] () {
                             xml.node("policy",[&] () { xml.attribute("label", "runtime_init -> config"); xml.attribute("report", "forkserver -> config"); });
-                            xml.node("policy",[&] () { xml.attribute("label", "forkserver -> status"); xml.attribute("report", "runtime_init -> status"); });
+                            xml.node("policy",[&] () { xml.attribute("label", "forkserver -> state"); xml.attribute("report", "runtime_init -> state"); });
                         });
                     });
 
@@ -92,6 +93,10 @@ public:
                                 xml.attribute("label", "config");
                                 xml.node("child",[&] () {xml.attribute("name", "runtime_report_rom");});
                             });
+                            xml.node("service",[&] () {
+                                xml.attribute("name", "ROM");
+                                xml.attribute("label", "state");
+                            });
                             xml.node("service",[&] () { xml.attribute("name", "File_system"); xml.node("parent",[&] () {}); });
                             xml.node("service",[&] () { xml.attribute("name", "Shm_session"); xml.node("parent",[&] () {}); });
                             xml.node("service",[&] () { xml.attribute("name", "Timer"); xml.node("parent",[&] () {}); });
@@ -104,12 +109,23 @@ public:
                         xml.attribute("name", "runtime_init");
                         xml.node("binary",[&] () { xml.attribute("name", "init"); });
                         xml.node("resource",[&] () { xml.attribute("name", "RAM"); xml.attribute("quantum", "500M"); });
-
+                        xml.node("config",[&] () { xml.node("report",[&] () {
+                            xml.attribute("ids", "yes");
+                            xml.attribute("child_ram", "yes");
+                            xml.attribute("child_caps", "yes");
+                            xml.attribute("init_ram", "yes");
+                            xml.attribute("init_caps", "yes");
+                        }); });
+                        xml.node("heartbeat",[&] () { xml.attribute("rate_ms", "2000"); });
                         xml.node("route",[&] () {
                              xml.node("service",[&] () {
                                 xml.attribute("name", "ROM");
                                 xml.attribute("label", "config");
                                 xml.node("child",[&] () { xml.attribute("name", "runtime_report_rom"); });
+                            });
+                            xml.node("service",[&] () {
+                                xml.attribute("name", "Report");
+                                xml.node("child",[&] () { xml.attribute("name", "runtime_report_rom"); xml.attribute("label", "state"); });
                             });
                             xml.node("service",[&] () { xml.attribute("name", "File_system"); xml.node("parent",[&] () {}); });
                             xml.node("service",[&] () { xml.attribute("name", "Shm_session"); xml.node("parent",[&] () {}); });
