@@ -1,5 +1,5 @@
 build { core init timer lib/ld
-        lib/libc lib/vfs
+        lib/libc lib/libm lib/vfs
         lib/vfs_jitterentropy
         lib/vfs_pipe
         server/vfs
