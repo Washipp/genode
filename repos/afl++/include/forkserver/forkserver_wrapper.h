@@ -6,14 +6,11 @@ extern "C" {
 
 #endif
 
-// Forward declare the C++ class as a C struct
-typedef void* AflFuzzMain;
-
 // Required definition to start afl-fuzz' main function.
-int start_afl_fuzz(int argc, char **argv_orig, char **envp, void* afl_fuzz);
+int main(int argc, char **argv_orig, char **envp);
 
 // Declare the wrapper function
-int call_report_new_forkserver(void* afl_fuzz, int st_pipe_0, int ctl_pipe_1, int out_fd,
+int call_report_new_forkserver(int st_pipe_0, int ctl_pipe_1, int out_fd,
                                int coverage_map_shmid, int fuzzing_shmid);
 
 #ifdef __cplusplus

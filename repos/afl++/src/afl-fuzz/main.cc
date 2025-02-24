@@ -171,9 +171,12 @@ public:
     }
 };
 
+/* This pointer is used to call the forkserver's report function from afl++. */
+Afl_fuzz::Main *main_reporter;
+
 // This function call replaces the fork() and execv() call in afl-fuzz.
-extern "C" int call_report_new_forkserver(void* forkserver, int st_pipe_0, int ctl_pipe_1, int out_fd, int coverage_map_shmid, int fuzzing_shmid) {
-    return static_cast<Afl_fuzz::Main*>(forkserver)->report_new_forkserver(st_pipe_0, ctl_pipe_1, out_fd, coverage_map_shmid, fuzzing_shmid);
+extern "C" int call_report_new_forkserver(int st_pipe_0, int ctl_pipe_1, int out_fd, int coverage_map_shmid, int fuzzing_shmid) {
+    return main_reporter->report_new_forkserver(st_pipe_0, ctl_pipe_1, out_fd, coverage_map_shmid, fuzzing_shmid);
 }
 
 void Libc::Component::construct(Libc::Env &env)
@@ -181,6 +184,7 @@ void Libc::Component::construct(Libc::Env &env)
     shm_init(env);
 
     Afl_fuzz::Main init_main(env);
+    main_reporter = &init_main;
 
     // This configuration should be done in the config of afl-fuzz
     setenv("AFL_NO_UI", "1", 1);
@@ -199,7 +203,7 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[5] = strdup("--");
         argv_orig[6] = strdup("/binary/posix_bin");
 
-        start_afl_fuzz(argc, argv_orig, envp, (void*) &init_main);
+        main(argc, argv_orig, envp);
         Genode::log("afl-fuzz test completed.");
     });
 }
