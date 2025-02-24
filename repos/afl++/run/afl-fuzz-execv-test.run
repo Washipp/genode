@@ -60,7 +60,7 @@ install_config {
 
 	<start name="afl-fuzz">
 		<resource name="RAM" quantum="1500M"/>
-		<provides> <service name="Shm_Session"/> </provides>
+		<provides> <service name="Shm_session"/> </provides>
         <config>
             <vfs> <fs/> </vfs>
             <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />

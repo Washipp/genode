@@ -46,7 +46,7 @@ install_config {
 
     <start name="afl-shm-server" caps="100">
         <resource name="RAM" quantum="200M"/>
-		<provides> <service name="Shm_Session"/> </provides>
+		<provides> <service name="Shm_session"/> </provides>
         <config>
             <vfs> <fs/> </vfs>
             <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" />
@@ -65,7 +65,7 @@ install_config {
         </config>
         <route>
             <service name="File_system"> <child name="vfs" /> </service>
-            <service name="Shm_Session"> <child name="afl-shm-server"/> </service>
+            <service name="Shm_session"> <child name="afl-shm-server"/> </service>
             <any-service> <parent/> </any-service>
         </route>
     </start>

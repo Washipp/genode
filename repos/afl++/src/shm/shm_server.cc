@@ -36,15 +36,16 @@ struct Shm_env {
      ** RPC interface **
      *******************/
 
-    struct Shm_Session_component : Genode::Rpc_object<Shm_Session> {
+    struct Shm_session_component : Genode::Rpc_object<Shm_session> {
 
         Dictionary<Dict_elem, int> &_dict;
 
-        Shm_Session_component(Dictionary<Dict_elem, int> &dict) : _dict(dict)
+        Shm_session_component(Dictionary<Dict_elem, int> &dict) : _dict(dict)
         { }
 
         Ram_dataspace_capability shm_get_dataspace(int shmid) override
         {
+            // TODO: Should be removed at some point...
             // This case is used to test the functionality, if the shmid is not available.
             if (shmid == -1) {
                 Ram_dataspace_capability a;
@@ -60,21 +61,21 @@ struct Shm_env {
         }
     };
 
-    class Shm_Session_root_component : public Genode::Root_component<Shm_Session_component> {
+    class Shm_session_root_component : public Genode::Root_component<Shm_session_component> {
 
         Dictionary<Dict_elem, int> &_dict;
     protected:
-        Shm_Session_component *_create_session(const char *) override
+        Shm_session_component *_create_session(const char *) override
         {
-            return new(md_alloc()) Shm_Session_component(_dict);
+            return new(md_alloc()) Shm_session_component(_dict);
         }
 
     public:
 
-        Shm_Session_root_component(Genode::Entrypoint &ep,
+        Shm_session_root_component(Genode::Entrypoint &ep,
                                    Genode::Allocator &alloc,
                                    Dictionary<Dict_elem, int> &dict) :
-                Genode::Root_component<Shm_Session_component>(ep, alloc), _dict(dict)
+                Genode::Root_component<Shm_session_component>(ep, alloc), _dict(dict)
         { }
     };
 
@@ -85,7 +86,7 @@ struct Shm_env {
     /* Maps the Shared Memory Identifier to the dataspace capability. */
     Dictionary<Dict_elem, int> dict {};
 
-    Shm_Session_root_component root {env.ep(), _heap, dict};
+    Shm_session_root_component root { env.ep(), _heap, dict};
 
     Shm_env(Env &env) : env(env)
     {

@@ -23,14 +23,14 @@ struct Shm_env {
      ** RPC interface **
      *******************/
 
-    struct Shm_session_client : Connection<Shm_Session>, Rpc_client<Shm_Session> {
+    struct Shm_session_client : Connection<Shm_session>, Rpc_client<Shm_session> {
         Shm_session_client(Env &env) :
 
                 /* create session */
-                Connection<Shm_Session>(env, Label(),
+                Connection<Shm_session>(env, Label(),
                                         Ram_quota { 8*1024 }, Args()),
                 /* initialize RPC interface */
-                Rpc_client<Shm_Session>(cap())
+                Rpc_client<Shm_session>(cap())
         { }
 
         Ram_dataspace_capability shm_get_dataspace(int shmid) override
