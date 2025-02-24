@@ -59,45 +59,18 @@ class Forkserver::Main {
                 xml.attribute("name", "print_component");
                 xml.attribute("caps", "50");
                 xml.attribute("version", ++_version);
-                xml.node("resource", [&]() {
-                    xml.attribute("name", "RAM");
-                    xml.attribute("quantum", "64M");
-                });
+                xml.node("resource", [&]() { xml.attribute("name", "RAM"); xml.attribute("quantum", "64M"); });
                 xml.node("heartbeat", [&]() { });
 
                 xml.node("route", [&]() {
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "CPU");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "File_system");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "LOG");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "PD");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "RM");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "ROM");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "Timer");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "Shm_session");
-                        xml.node("parent", [&]() { });
-                    });
+                    xml.node("service", [&]() { xml.attribute("name", "File_system"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "Shm_session"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "Timer"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "CPU"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "LOG"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "PD"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "RM"); xml.node("parent", [&]() { }); });
+                    xml.node("service", [&]() { xml.attribute("name", "ROM"); xml.node("parent", [&]() { }); });
                 });
             });
         });
