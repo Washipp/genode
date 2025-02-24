@@ -4,3 +4,4 @@ remove_flock_calls.patch
 remove_forkserver.patch
 remove_openbsd_check.patch
 support_for_reporting.patch
+remove_link_calls.patch
