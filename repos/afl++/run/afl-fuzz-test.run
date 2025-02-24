@@ -89,73 +89,9 @@ install_config {
 
 
     <!-- This init component starts the forkserver, which requires the same VFS as afl-fuzz to communicate. -->
-	<start name="startup_init" caps="100">
+	<start name="startup_init" caps="2000">
         <binary name="init" />
-        <resource name="RAM" quantum="150M"/>
-
-        <!-- #### START #### -->
-        <!-- Config to be defined by afl-fuzz and reported to startup_init -->
-        <config>
-
-            <!-- Responsible for starting and reporting the children of forkserver (instead of fork() and execv()) -->
-            <start name="runtime_report_rom">
-                <!-- Maybe this should be a "monitor" ? -->
-                <binary name="report_rom"/>
-                <resource name="RAM" quantum="2M"/>
-                <provides>
-                    <service name="Report"/>
-                    <service name="ROM"/>
-                </provides>
-                <config verbose="yes">
-                    <policy label="runtime_init -> config" report="forkserver -> config"/>
-                    <!-- TODO: This policy should give the forkserver the status of the running children from runtime_init -->
-                    <policy label="forkserver -> status" report="runtime_init -> status"/>
-                </config>
-            </start>
-
-            <!-- AFL++ logic: interface between the SUT and afl-fuzz. Communicates with afl-fuzz using pipes. -->
-            <start name="forkserver">
-                <resource name="RAM" quantum="500M"/>
-                <config>
-                    <vfs> <fs/> </vfs>
-                    <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
-                </config>
-                <route>
-                    <service name="File_system"> <parent/> </service>
-                    <service name="Shm_session"> <parent/> </service>
-                    <service name="Report" label="config"> <child name="runtime_report_rom"/> </service>
-                    <service name="Timer"> <parent/> </service>
-                    <any-service> <parent/> </any-service>
-                </route>
-            </start>
-
-            <start name="runtime_init" caps="100">
-                <binary name="init" />
-                <resource name="RAM" quantum="150M"/>
-
-                <config>
-                    <!-- This is the SUT. In this case a trivial component that prints something to the log-session -->
-                    <start name="print_component">
-                        <resource name="RAM" quantum="50M"/>
-                    </start>
-                </config>
-
-                <route>
-                    <service name="File_system"> <parent/> </service>
-                    <service name="Shm_session"> <parent/> </service>
-                    <service name="ROM" label="config"> <child name="runtime_report_rom" /> </service>
-                    <service name="Timer"> <parent/> </service>
-                    <service name="CPU"> <parent/> </service>
-                    <service name="LOG"> <parent/> </service>
-                    <service name="PD"> <parent/> </service>
-                    <service name="RM"> <parent/> </service>
-                    <service name="ROM"> <parent/> </service>
-                </route>
-            </start>
-        </config>
-        <!-- #### END #### -->
-
-
+        <resource name="RAM" quantum="1000M"/>
         <route>
             <service name="File_system"> <child name="vfs" /> </service>
             <service name="Shm_session"> <child name="afl-fuzz" /> </service>
