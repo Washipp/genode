@@ -4,6 +4,7 @@ LIBS += base libc libm
 
 INC_DIR += $(REP_DIR)/include/afl_libc
 INC_DIR += $(REP_DIR)/include/shm
+INC_DIR += $(REP_DIR)/include/forkserver
 
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
 INC_DIR += $(AFL++_DIR)/include

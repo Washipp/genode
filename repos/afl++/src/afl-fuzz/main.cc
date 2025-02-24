@@ -1,5 +1,6 @@
 /* afl++ port includes */
 #include "init.h"
+#include "forkserver_wrapper.h"
 
 /* Genode includes */
 #include <libc/component.h>
@@ -9,9 +10,6 @@
 /* libc includes */
 #include <stdlib.h>
 #include <string.h>
-
-// Required definition to start afl-fuzz' main function.
-extern "C" int main(int argc, char **argv_orig, char **envp);
 
 /* Used for debugging. Upon call, the execution waits for an ENTER input. */
 extern "C" void wait_for_continue(void);
@@ -174,8 +172,8 @@ public:
 };
 
 // This function call replaces the fork() and execv() call in afl-fuzz.
-extern "C" int call_report_new_forkserver(struct Afl_fuzz::Main* forkserver, int st_pipe_0, int ctl_pipe_1, int out_fd, int coverage_map_shmid, int fuzzing_shmid) {
-    return forkserver->report_new_forkserver(st_pipe_0, ctl_pipe_1, out_fd, coverage_map_shmid, fuzzing_shmid);
+extern "C" int call_report_new_forkserver(void* forkserver, int st_pipe_0, int ctl_pipe_1, int out_fd, int coverage_map_shmid, int fuzzing_shmid) {
+    return static_cast<Afl_fuzz::Main*>(forkserver)->report_new_forkserver(st_pipe_0, ctl_pipe_1, out_fd, coverage_map_shmid, fuzzing_shmid);
 }
 
 void Libc::Component::construct(Libc::Env &env)
@@ -201,7 +199,7 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[5] = strdup("--");
         argv_orig[6] = strdup("/binary/posix_bin");
 
-        main(argc, argv_orig, envp);
+        start_afl_fuzz(argc, argv_orig, envp, (void*) &init_main);
         Genode::log("afl-fuzz test completed.");
     });
 }

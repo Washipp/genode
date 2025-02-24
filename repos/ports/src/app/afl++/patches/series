@@ -3,4 +3,4 @@ remove_check_binary_calls.patch
 remove_flock_calls.patch
 remove_forkserver.patch
 remove_openbsd_check.patch
-remove_binary_fuzzing_files.patch
+support_for_reporting.patch
