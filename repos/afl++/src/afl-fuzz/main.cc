@@ -25,7 +25,7 @@ class Afl_fuzz::Main {
     Libc::Env &_env;
     // Through this reporter new SUTs can be started.
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
-    int _version { 0 };
+    int _version { -1 };
 
 public:
 
