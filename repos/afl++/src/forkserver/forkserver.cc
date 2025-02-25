@@ -1,5 +1,6 @@
 /* afl++ port includes */
 #include "sys/shm.h"
+#include "init.h"
 
 /* Genode includes */
 #include <libc/component.h>
@@ -13,8 +14,6 @@
 
 /* libc includes */
 #include <unistd.h>
-
-#define write_error(text) Genode::error("Error: ", text)
 
 namespace Forkserver {
     class Main;
@@ -46,14 +45,14 @@ class Forkserver::Main {
     {
         _init_config_reporter.generate([&](Xml_generator &xml) {
             xml.node("parent-provides", [&]() {
-                xml.node("service", [&]() { xml.attribute("name", "CPU"); });
                 xml.node("service", [&]() { xml.attribute("name", "File_system"); });
+                xml.node("service", [&]() { xml.attribute("name", "Shm_session"); });
+                xml.node("service", [&]() { xml.attribute("name", "Timer"); });
+                xml.node("service", [&]() { xml.attribute("name", "CPU"); });
                 xml.node("service", [&]() { xml.attribute("name", "LOG"); });
                 xml.node("service", [&]() { xml.attribute("name", "PD"); });
                 xml.node("service", [&]() { xml.attribute("name", "RM"); });
                 xml.node("service", [&]() { xml.attribute("name", "ROM"); });
-                xml.node("service", [&]() { xml.attribute("name", "Timer"); });
-                xml.node("service", [&]() { xml.attribute("name", "Shm_session"); });
             });
             xml.node("start", [&]() {
                 xml.attribute("name", "print_component");
@@ -91,7 +90,7 @@ class Forkserver::Main {
 
             /* Relay wait status to afl-fuzz via pipe */
             if (unlikely(write(FORKSRV_FD + 1, &status, 4) != 4)) {
-                write_error("writing to afl-fuzz");
+                Genode::error("writing to afl-fuzz");
                 _env.parent().exit(1);
             }
 
@@ -100,7 +99,7 @@ class Forkserver::Main {
 
             /* Wait for parent by reading from the pipe. Abort if read fails. */
             if (read(FORKSRV_FD, &was_killed, 4) != 4) {
-                write_error("read from AFL++ tool");
+                Genode::error("read from AFL++ tool");
                 _env.parent().exit(1);
             }
 
@@ -109,13 +108,13 @@ class Forkserver::Main {
 
             /* In parent process: write PID to pipe, then wait for new signal update. */
             if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
-                write_error("write to afl-fuzz");
+                Genode::error("write to afl-fuzz");
                 _env.parent().exit(1);
             }
 
         } else {
-            write_error("Error while reading status update. XML of the update:");
-            write_error(cfg);
+            Genode::error("Error while reading status update. XML of the update:");
+            Genode::error(cfg);
         }
     }
 
@@ -185,7 +184,7 @@ public:
 
         if (read(FORKSRV_FD, reply, 4) != 4) { return 1; }
         if (tmp != status2) {
-            write_error("wrong forkserver message from AFL++ tool");
+            Genode::error("wrong forkserver message from AFL++ tool");
             return 1;
         }
 
@@ -223,7 +222,7 @@ public:
               ret = write(FORKSRV_FD + 1, __afl_dictionary + offset, len);
 
               if (ret < 1) {
-                write_error("could not send dictionary");
+                Genode::error("could not send dictionary");
                 _env.parent().exit(1);
               }
 
@@ -241,7 +240,7 @@ public:
 
         /* Wait for parent by reading from the pipe. Abort if read fails. */
         if (read(FORKSRV_FD, &was_killed, 4) != 4) {
-            write_error("read from AFL++ tool");
+            Genode::error("read from AFL++ tool");
             return 1;
         }
 
@@ -250,7 +249,7 @@ public:
 
         /* Write PID to the afl-fuzz forkserver via pipe. */
         if (unlikely(write(FORKSRV_FD + 1, &child_pid, 4) != 4)) {
-            write_error("write to afl-fuzz");
+            Genode::error("write to afl-fuzz");
             return 1;
         }
 
@@ -275,14 +274,19 @@ public:
         if (exit_code) {
             /* Use a distinctive bitmap signature to tell the parent about the report failing. */
             auto *trace_bits = static_cast<unsigned int *>(shmat(_coverage_map_shmid, NULL, 0));
-            *(unsigned int *) trace_bits = EXEC_FAIL_SIG;
-            write_error("Error: starting forkserver failed.\n");
+            Genode::error("starting forkserver failed.");
+            if (trace_bits != (void *) -1) {
+                *trace_bits = EXEC_FAIL_SIG;
+            } else {
+                Genode::error("could not signal EXEC_FAIL_SIG to forkserver.");
+            }
             _env.parent().exit(exit_code);
         }
     }
 
     Main(Libc::Env &env) : _env(env)
     {
+        shm_init(env);
         Libc::with_libc([&]() {
             init_forkserver();
         });
