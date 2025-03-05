@@ -131,7 +131,6 @@ public:
 
 class Shm::Main {
 
-
     Genode::Env &_env;
 
     Heap _heap { _env.ram(), _env.rm() };

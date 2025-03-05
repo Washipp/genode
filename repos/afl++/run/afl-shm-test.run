@@ -1,14 +1,8 @@
-build { core init timer
-        lib/ld
-        lib/libc
-        lib/vfs
-        shm_server
+build { core init timer lib/ld
+        shm
         test/shm/client0
         test/shm/client1
       }
-
-import_from_depot [depot_user]/src/vfs \
-                  [depot_user]/src/libc
 
 create_boot_directory
 
@@ -23,7 +17,7 @@ install_config {
     </parent-provides>
 
     <default-route>
-        <any-service> <any-child/> <parent/> </any-service>
+        <any-service> <parent/> </any-service>
     </default-route>
 
     <start name="timer" caps="100">

@@ -6,11 +6,6 @@
 #include <base/log.h>
 #include <base/connection.h>
 
-/* libc includes */
-#include <sys/ipc.h>
-
-#define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
-
 using namespace Genode;
 
 class SHMAT_Alloc_Failed : public Exception {};
@@ -57,12 +52,14 @@ struct Shm_env {
     { }
 };
 
-static Constructible<Shm_env> _shm_env;
+static Constructible<Shm_env> shm_env;
 
 
 void shm_init(Env &env)
 {
-    _shm_env.construct(env);
+    if (!shm_env.constructed()) {
+        shm_env.construct(env);
+    }
 }
 
 /**
@@ -70,13 +67,13 @@ void shm_init(Env &env)
  * */
 int shmget(int key, size_t size, int shmflg)
 {
-    if (!_shm_env.constructed()) {
+    if (!shm_env.constructed()) {
         Genode::error("Call 'shm_init()' first.");
         return -1;
     }
 
-    if (key != IPC_PRIVATE) {
-        Genode::error("shmget called with key '", key, "' Only IPC_PRIVATE is supported.");
+    if (key != 0) {
+        Genode::error("shmget called with key '", key, "' Only IPC_PRIVATE (key = 0) is supported.");
         return -1;
     }
     // This value comes from attached_ram_dataspace.h but is only available as an enum there.
@@ -90,7 +87,7 @@ int shmget(int key, size_t size, int shmflg)
         final_size += PAGE_SIZE - (size % PAGE_SIZE);
     }
 
-    int shmid = _shm_env->shm_session_client.shm_alloc_new_dataspace(key, final_size);
+    int shmid = shm_env->shm_session_client.shm_alloc_new_dataspace(key, final_size);
 
     // For now the flags are ignored. This way, the compiler is satisfied.
     (void) shmflg;
@@ -105,12 +102,12 @@ int shmget(int key, size_t size, int shmflg)
  * */
 void *shmat(int shmid, const void *shmaddr, int shmflg)
 {
-    if (!_shm_env.constructed()) {
+    if (!shm_env.constructed()) {
         Genode::error("Call 'shm_init()' first.");
         return (void *) -1;
     }
 
-    Ram_dataspace_capability ds = _shm_env->shm_session_client.shm_get_dataspace(shmid);
+    Ram_dataspace_capability ds = shm_env->shm_session_client.shm_get_dataspace(shmid);
 
     if (!ds.valid()) {
         Genode::error("shmid '", shmid, "' invalid, no capability found.");
@@ -128,7 +125,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
             .writeable  = true,
     };
 
-    _shm_env->env.rm().attach(ds, attr).with_result(
+    shm_env->env.rm().attach(ds, attr).with_result(
         [&](Region_map::Range r) {
             server_addr = r.start;
         },
@@ -150,7 +147,7 @@ void *shmat(int shmid, const void *shmaddr, int shmflg)
  * */
 int shmctl(int shmid, int cmd, struct shmid_ds *buf)
 {
-    if (!_shm_env.constructed()) {
+    if (!shm_env.constructed()) {
         Genode::error("Call 'shm_init()' first.");
         return -1;
     }
@@ -165,10 +162,10 @@ int shmctl(int shmid, int cmd, struct shmid_ds *buf)
  * */
 int shmdt(const void *shmaddr)
 {
-    if (!_shm_env.constructed()) {
+    if (!shm_env.constructed()) {
         Genode::error("Call 'shm_init()' first.");
         return -1;
     }
-    _shm_env->env.rm().detach((addr_t) shmaddr);
+    shm_env->env.rm().detach((addr_t) shmaddr);
     return 0;
 }
