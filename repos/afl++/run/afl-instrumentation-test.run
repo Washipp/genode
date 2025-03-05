@@ -1,4 +1,4 @@
-build { core lib/ld lib/libc lib/vfs init test/afl-fuzz-sut  }
+build { core lib/ld lib/libc lib/vfs init test/instrumentation  }
 
 import_from_depot [depot_user]/src/vfs \
                   [depot_user]/src/libc
@@ -17,7 +17,7 @@ install_config {
 		<any-service> <parent/> <any-child/> </any-service>
 	</default-route>
 	<default caps="200"/>
-	<start name="afl-fuzz-sut">
+	<start name="instrumentation-test-component">
 		<resource name="RAM" quantum="50M"/>
         <config>
             <vfs> <dir name="dev"> <log/> </dir> </vfs>
