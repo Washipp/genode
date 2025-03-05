@@ -94,8 +94,8 @@ int shmget(int key, size_t size, int shmflg)
 
     // For now the flags are ignored. This way, the compiler is satisfied.
     (void) shmflg;
-    NOT_IMPLEMENTED;
-    return -1;
+
+    return shmid;
 }
 
 /**
