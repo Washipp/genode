@@ -1,13 +1,7 @@
 #ifndef AFL_SHM_H
 #define AFL_SHM_H
 
-#include <stddef.h>
-#include <sys/types.h>
-
-typedef unsigned long int __syscall_ulong_t;
-
-typedef __syscall_ulong_t shmatt_t;
-
+#include "null.h"
 
 /* Data structure describing a shared memory segment.  */
 struct shmid_ds { };

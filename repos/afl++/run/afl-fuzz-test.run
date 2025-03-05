@@ -47,7 +47,7 @@ install_config {
             <service name="Report"/>
             <service name="ROM"/>
         </provides>
-        <config verbose="yes">
+        <config>
             <policy label="startup_init -> config" report="afl-fuzz -> config"/>
             <policy label="afl-fuzz -> state" report="startup_init -> state"/>
         </config>
@@ -96,8 +96,6 @@ install_config {
             <any-service> <parent/> </any-service>
         </route>
     </start>
-
-
 
 </config>}
 

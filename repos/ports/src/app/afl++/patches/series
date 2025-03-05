@@ -1,7 +1,7 @@
 reduce_test_dependencies_from_makefile.patch
 remove_check_binary_calls.patch
 remove_flock_calls.patch
-remove_forkserver.patch
 remove_openbsd_check.patch
-support_for_reporting.patch
 remove_link_calls.patch
+share_shmid_via_fsrv.patch
+forkserver_port.patch

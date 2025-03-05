@@ -5,16 +5,12 @@
 #include <base/log.h>
 #include <libc/component.h>
 
-void Component::construct(Genode::Env &env)
-{
-    shm_init(env);
-    Genode::log("Hello from the print component");
-}
 
 void Libc::Component::construct(Libc::Env &env)
 {
     Libc::with_libc([&] () {
+        Genode::log("Hello from the print component. Trying to setup shared memory:");
         shm_init(env);
-        Genode::log("Hello from the print component");
+        env.parent().exit(0);
     });
 }

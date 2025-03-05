@@ -1,0 +1,28 @@
+diff --git a/include/forkserver.h b/include/forkserver.h
+index 593e34a2..e7343f76 100644
+--- a/include/forkserver.h
++++ b/include/forkserver.h
+@@ -206,6 +206,9 @@ typedef struct afl_forkserver {
+   s32                   nyx_log_fd;
+ #endif
+ 
++  s32 shm_id_trace_bits; /* used for the tracebits */
++  s32 shm_id_fuzzing; /* used for shared memory fuzzing */
++
+ } afl_forkserver_t;
+ 
+ typedef enum fsrv_run_result {
+diff --git a/src/afl-fuzz.c b/src/afl-fuzz.c
+index 8df99773..442197a5 100644
+--- a/src/afl-fuzz.c
++++ b/src/afl-fuzz.c
+@@ -2281,6 +2281,9 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+     }
+ 
++    afl->fsrv.shm_id_trace_bits = afl->shm.shm_id;
++    afl->fsrv.shm_id_fuzzing = afl->shm_fuzz->shm_id;
++
+     u32 new_map_size = afl_fsrv_get_mapsize(
+         &afl->fsrv, afl->argv, &afl->stop_soon, afl->afl_env.afl_debug_child);
+ 
