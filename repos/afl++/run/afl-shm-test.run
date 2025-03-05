@@ -2,9 +2,9 @@ build { core init timer
         lib/ld
         lib/libc
         lib/vfs
-        server/vfs
-        test/shm_client
-        test/shm_server
+        shm_server
+        test/shm/client0
+        test/shm/client1
       }
 
 import_from_depot [depot_user]/src/vfs \
@@ -34,38 +34,27 @@ install_config {
         </route>
     </start>
 
-    <start name="vfs" caps="250">
-        <resource name="RAM" quantum="200M"/>
-		<provides> <service name="File_system"/> </provides>
-
-		<config>
-		    <vfs> <dir name="dev"> <log/> </dir> </vfs>
-		    <default-policy root="/" writeable="yes"/>
-		</config>
-    </start>
-
     <start name="afl-shm-server" caps="100">
         <resource name="RAM" quantum="200M"/>
 		<provides> <service name="Shm_session"/> </provides>
-        <config>
-            <vfs> <fs/> </vfs>
-            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" />
-        </config>
         <route>
-            <service name="File_system"> <child name="vfs" /> </service>
             <any-service> <parent/> </any-service>
         </route>
     </start>
 
-    <start name="afl-shm-client" caps="200">
+    <start name="test-afl-shm-client0" caps="200">
         <resource name="RAM" quantum="150M"/>
-        <config>
-            <vfs> <fs/>  </vfs>
-            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
-        </config>
         <route>
-            <service name="File_system"> <child name="vfs" /> </service>
             <service name="Shm_session"> <child name="afl-shm-server"/> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="test-afl-shm-client1" caps="200">
+        <resource name="RAM" quantum="150M"/>
+        <route>
+            <service name="Shm_session"> <child name="afl-shm-server"/> </service>
+            <service name="Timer"> <child name="timer"/> </service>
             <any-service> <parent/> </any-service>
         </route>
     </start>

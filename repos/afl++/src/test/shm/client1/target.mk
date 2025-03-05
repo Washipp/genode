@@ -1,4 +1,4 @@
-TARGET   = afl-shm-client
+TARGET   = test-afl-shm-client1
 LIBS     += base libc
 SRC_CC   += main.cc shm_client.cc
 

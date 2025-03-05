@@ -6,6 +6,8 @@
 #include <base/log.h>
 #include <base/connection.h>
 
+/* libc includes */
+#include <sys/ipc.h>
 
 #define NOT_IMPLEMENTED Genode::log(__func__, " not implemented")
 
@@ -29,9 +31,20 @@ struct Shm_env {
                 Rpc_client<Shm_session>(cap())
         { }
 
+        int shm_alloc_new_dataspace(int key, size_t size) override
+        {
+            return call<Rpc_alloc_new_dataspace>(key, size);
+        }
+
+
         Ram_dataspace_capability shm_get_dataspace(int shmid) override
         {
             return call<Rpc_shm_get_dataspace>(shmid);
+        }
+
+        int shm_detach_dataspace(addr_t shmaddr) override
+        {
+            return call<Rpc_detach_dataspace>(shmaddr);
         }
 
     };
@@ -57,8 +70,29 @@ void shm_init(Env &env)
  * */
 int shmget(int key, size_t size, int shmflg)
 {
-    (void) key;
-    (void) size;
+    if (!_shm_env.constructed()) {
+        Genode::error("Call 'shm_init()' first.");
+        return -1;
+    }
+
+    if (key != IPC_PRIVATE) {
+        Genode::error("shmget called with key '", key, "' Only IPC_PRIVATE is supported.");
+        return -1;
+    }
+    // This value comes from attached_ram_dataspace.h but is only available as an enum there.
+    enum {
+        PAGE_SIZE = 4096
+    };
+
+    // rounded up to a multiple of PAGE_SIZE
+    size_t final_size = size;
+    if ((size % PAGE_SIZE) != 0) {
+        final_size += PAGE_SIZE - (size % PAGE_SIZE);
+    }
+
+    int shmid = _shm_env->shm_session_client.shm_alloc_new_dataspace(key, final_size);
+
+    // For now the flags are ignored. This way, the compiler is satisfied.
     (void) shmflg;
     NOT_IMPLEMENTED;
     return -1;
@@ -135,6 +169,6 @@ int shmdt(const void *shmaddr)
         Genode::error("Call 'shm_init()' first.");
         return -1;
     }
-    _shm_env->env.rm().detach((addr_t) (shmaddr));
+    _shm_env->env.rm().detach((addr_t) shmaddr);
     return 0;
 }
