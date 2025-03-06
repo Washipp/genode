@@ -1,0 +1,45 @@
+diff --git a/src/afl-fuzz.c b/src/afl-fuzz.c
+index 442197a5..5a1150ce 100644
+--- a/src/afl-fuzz.c
++++ b/src/afl-fuzz.c
+@@ -1651,7 +1651,7 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   }
+ 
+-  if (get_afl_env("AFL_NO_FORKSRV")) { afl->no_forkserver = 1; }
++  afl->no_forkserver = 1;
+   if (get_afl_env("AFL_NO_CPU_RED")) { afl->no_cpu_meter_red = 1; }
+   if (get_afl_env("AFL_NO_ARITH")) { afl->no_arith = 1; }
+   if (get_afl_env("AFL_SHUFFLE_QUEUE")) { afl->shuffle_queue = 1; }
+diff --git a/src/afl-showmap.c b/src/afl-showmap.c
+index 1712e634..9a2fbd07 100644
+--- a/src/afl-showmap.c
++++ b/src/afl-showmap.c
+@@ -1356,10 +1356,7 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   check_environment_vars(envp);
+ 
+-  if (getenv("AFL_NO_FORKSRV")) {             /* if set, use the fauxserver */
+-    fsrv->use_fauxsrv = true;
+-
+-  }
++  fsrv->use_fauxsrv = true;
+ 
+   if (getenv("AFL_DEBUG")) {
+ 
+diff --git a/src/afl-tmin.c b/src/afl-tmin.c
+index 23e0ff13..0d2e0cd8 100644
+--- a/src/afl-tmin.c
++++ b/src/afl-tmin.c
+@@ -1093,10 +1093,7 @@ int main(int argc, char **argv_orig, char **envp) {
+ 
+   check_environment_vars(envp);
+ 
+-  if (getenv("AFL_NO_FORKSRV")) {             /* if set, use the fauxserver */
+-    fsrv->use_fauxsrv = true;
+-
+-  }
++  fsrv->use_fauxsrv = true;
+ 
+   setenv("AFL_NO_AUTODICT", "1", 1);
+ 

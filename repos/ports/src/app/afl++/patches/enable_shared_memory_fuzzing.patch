@@ -1,0 +1,12 @@
+diff --git a/src/afl-forkserver.c b/src/afl-forkserver.c
+index 909432fb..d075218d 100644
+--- a/src/afl-forkserver.c
++++ b/src/afl-forkserver.c
+@@ -271,6 +271,7 @@ void afl_fsrv_start(afl_forkserver_t *fsrv, char **argv,
+   (void) argv;
+   (void) stop_soon_p;
+   (void) debug_child_output;
++  fsrv->use_shmem_fuzz = 1;
+ // "Forkserver does not need to be started in Genode.";
+ }
+ 

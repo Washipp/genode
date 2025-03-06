@@ -6,3 +6,5 @@ remove_link_calls.patch
 share_shmid_via_fsrv.patch
 forkserver_port.patch
 remove_forkserver.patch
+enable_no_frksrv.patch
+enable_shared_memory_fuzzing.patch

@@ -38,10 +38,10 @@ class Afl_fuzz::Main {
 
     int _status { 0 };
 
-    void _generate_new_report()
+    void _generate_new_report(int coverage_map_shmid, int fuzzing_shmid)
     {
         _init_config_reporter.generate([&](Xml_generator &xml) {
-//            xml.attribute("verbose", "yes");
+            xml.attribute("verbose", "no");
             xml.node("parent-provides", [&]() {
                 xml.node("service", [&]() { xml.attribute("name", "Shm_session"); });
                 xml.node("service", [&]() { xml.attribute("name", "Timer"); });
@@ -52,23 +52,25 @@ class Afl_fuzz::Main {
                 xml.node("service", [&]() { xml.attribute("name", "ROM"); });
             });
             xml.node("report", [&]() {
-                xml.attribute("delay_ms", 5000);
+                xml.attribute("delay_ms", 50);
                 xml.attribute("ids", "yes");
                 xml.attribute("child_ram", "yes");
                 xml.attribute("child_caps", "yes");
                 xml.attribute("init_ram", "yes");
                 xml.attribute("init_caps", "yes");
             });
-            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 5000); });
+            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 5); });
             xml.node("start", [&]() {
-                xml.attribute("name", "print_component");
+                xml.attribute("name", "wrapper");
                 xml.attribute("caps", "500");
-                xml.attribute("version", _version);
+                xml.attribute("version", ++_version);
                 xml.node("resource", [&]() {
                     xml.attribute("name", "RAM");
                     xml.attribute("quantum", "500M");
                 });
                 xml.node("config", [&]() {
+                    xml.attribute("coverage_map_shmid", coverage_map_shmid);
+                    xml.attribute("fuzzing_shmid", fuzzing_shmid);
                     xml.node("vfs", [&]() {
                         xml.node("dir", [&]() {
                             xml.attribute("name", "dev");
@@ -87,39 +89,11 @@ class Afl_fuzz::Main {
                 });
 
                 xml.node("route", [&]() {
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "Shm_session");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "Timer");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "CPU");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "LOG");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "PD");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "RM");
-                        xml.node("parent", [&]() { });
-                    });
-                    xml.node("service", [&]() {
-                        xml.attribute("name", "ROM");
-                        xml.node("parent", [&]() { });
-                    });
+                    xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
                 });
             });
         });
 
-        Genode::log("New config generated.");
     }
 
 
@@ -127,13 +101,9 @@ public:
 
     int report_new_target(int coverage_map_shmid, int fuzzing_shmid, struct Exec_data *exec_data)
     {
-        (void) coverage_map_shmid;
-        (void) fuzzing_shmid;
-        (void) exec_data;
-
         auto start = _timer.curr_time().trunc_to_plain_ms().value;
 
-        _generate_new_report();
+        _generate_new_report(coverage_map_shmid, fuzzing_shmid);
 
         // TODO: Make max-tries configurable?
         int max_tries = 100;
@@ -153,7 +123,7 @@ public:
 
         exec_data->version = _version;
         exec_data->status = _status;
-        exec_data->exec_ms = (int) (_timer.curr_time().trunc_to_plain_ms().value - start);
+        exec_data->exec_ms = (int) (_timer.curr_time().trunc_to_plain_ms().value - start) + 1;
 
         /* everything good. */
         return 1;
