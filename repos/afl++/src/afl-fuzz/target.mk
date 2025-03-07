@@ -9,19 +9,9 @@ INC_DIR += $(REP_DIR)/include/forkserver
 AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
 INC_DIR += $(AFL++_DIR)/include
 
-PREFIX      ?= /usr/local
-BIN_PATH     = $(PREFIX)/bin
-DOC_PATH     = $(PREFIX)/share/doc/afl
-
-CC_C_OPT += -DBIN_PATH=\"$(BIN_PATH)\" -DDOC_PATH=\"$(DOC_PATH)\"
-
 # The following libs have also been included. Ignore them for now
 #  -ldl -lrt -lm -lz -lm
 CC_C_OPT += -Wno-format-truncation -g -Wno-pointer-sign -Wno-variadic-macros -Wall -Wextra -Wno-pointer-arith -fPIC
-
-# This variable can improve the speed of the fuzzer depending on the fuzzer. (for example add AVX2 support)
-# We leave it empty for now.
-SPECIAL_PERFORMANCE = #-DHAVE_ZLIB
 
 SRC_C += afl-performance.c afl-common.c afl-forkserver.c afl-sharedmem.c
 
