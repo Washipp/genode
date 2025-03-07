@@ -8,3 +8,4 @@ forkserver_port.patch
 remove_forkserver.patch
 enable_no_frksrv.patch
 enable_shared_memory_fuzzing.patch
+remove_FreeBSD_macros.patch
