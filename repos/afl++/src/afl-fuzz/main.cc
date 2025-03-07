@@ -99,15 +99,16 @@ class Afl_fuzz::Main {
 
 public:
 
-    int report_new_target(int coverage_map_shmid, int fuzzing_shmid, struct Exec_data *exec_data)
+    int report_new_target(int coverage_map_shmid, int fuzzing_shmid, struct Exec_data *exec_data, uint64_t timeout)
     {
-        auto start = _timer.curr_time().trunc_to_plain_ms().value;
+        uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
 
         _generate_new_report(coverage_map_shmid, fuzzing_shmid);
 
         // TODO: Make max-tries configurable?
         int max_tries = 100;
         bool finished_execution = false;
+
         for(int i = 0; i < max_tries && !finished_execution; i++) {
             auto sig = _signal_receiver.wait_for_signal();
 
@@ -119,11 +120,16 @@ public:
                     _status = cfg.sub_node("child").attribute_value("exited", 0);
                 }
             }
+
+            if (_timer.curr_time().trunc_to_plain_ms().value - start > timeout) {
+                /* special value to signal timeout. */
+                _status = -11;
+                break;
+            }
         }
 
         exec_data->version = _version;
         exec_data->status = _status;
-        exec_data->exec_ms = (int) (_timer.curr_time().trunc_to_plain_ms().value - start) + 1;
 
         /* everything good. */
         return 1;
@@ -142,9 +148,10 @@ Afl_fuzz::Main *main_reporter;
 /* This function call replaces the fork() and execv() call in afl-fuzz. */
 extern "C" int call_report_new_forkserver(int coverage_map_shmid,
                                           int fuzzing_shmid,
-                                          struct Exec_data *exec_data)
+                                          struct Exec_data *exec_data,
+                                          int timeout)
 {
-    return main_reporter->report_new_target(coverage_map_shmid, fuzzing_shmid, exec_data);
+    return main_reporter->report_new_target(coverage_map_shmid, fuzzing_shmid, exec_data, (Genode::uint64_t) timeout);
 }
 
 void Libc::Component::construct(Libc::Env &env)
@@ -169,7 +176,7 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[3] = strdup("-o");
         argv_orig[4] = strdup("./output");
         argv_orig[5] = strdup("--");
-        argv_orig[6] = strdup("/binary/posix_bin");
+        argv_orig[6] = strdup("Genode");
 
         main(argc, argv_orig, envp);
         Genode::log("afl-fuzz test completed.");
