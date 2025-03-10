@@ -36,7 +36,7 @@ class Afl_fuzz::Main {
     Signal_context sc { };
     Signal_context_capability _signal_handler = _signal_receiver.manage(sc);
 
-    int _status { 0 };
+    int _status { -1 };
 
     void _generate_new_report(int coverage_map_shmid, int fuzzing_shmid)
     {
@@ -51,6 +51,7 @@ class Afl_fuzz::Main {
                 xml.node("service", [&]() { xml.attribute("name", "RM"); });
                 xml.node("service", [&]() { xml.attribute("name", "ROM"); });
             });
+            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 50); });
             xml.node("report", [&]() {
                 xml.attribute("delay_ms", 50);
                 xml.attribute("ids", "yes");
@@ -59,8 +60,8 @@ class Afl_fuzz::Main {
                 xml.attribute("init_ram", "yes");
                 xml.attribute("init_caps", "yes");
             });
-            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 5); });
             xml.node("start", [&]() {
+                xml.node("heartbeat", [&]() { });
                 xml.attribute("name", "wrapper");
                 xml.attribute("caps", "500");
                 xml.attribute("version", ++_version);
@@ -99,6 +100,8 @@ class Afl_fuzz::Main {
 
 public:
 
+    /* This function reports and starts a new child. Then it waits until there is an exit code
+     * in the reported state, the timeout is reached or max tries is reached. */
     int report_new_target(int coverage_map_shmid, int fuzzing_shmid, struct Exec_data *exec_data, uint64_t timeout)
     {
         uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
@@ -110,14 +113,20 @@ public:
         bool finished_execution = false;
 
         for(int i = 0; i < max_tries && !finished_execution; i++) {
-            auto sig = _signal_receiver.wait_for_signal();
+            _signal_receiver.wait_for_signal();
 
             _state_rom.update();
             const Xml_node cfg = _state_rom.xml();
-            if (!cfg.has_type("empty")) {
-                if (cfg.has_sub_node("child") && cfg.sub_node("child").has_attribute("exited")) {
+            if (!cfg.has_type("empty") && cfg.has_sub_node("child")) {
+                const Xml_node child = cfg.sub_node("child");
+                if (child.has_attribute("exited")) {
                     finished_execution = true;
-                    _status = cfg.sub_node("child").attribute_value("exited", 0);
+                    _status = child.attribute_value("exited", 0);
+                } else if (child.has_attribute("skipped_heartbeats")) {
+                    if (child.attribute_value("skipped_heartbeats", 0) > 10) {
+                        finished_execution = true;
+                        _status = EXIT_FAILURE;
+                    }
                 }
             }
 
@@ -128,6 +137,7 @@ public:
             }
         }
 
+        /* Version in Exec_data is used as the process id of the child. */
         exec_data->version = _version;
         exec_data->status = _status;
 
@@ -176,7 +186,7 @@ void Libc::Component::construct(Libc::Env &env)
         argv_orig[3] = strdup("-o");
         argv_orig[4] = strdup("./output");
         argv_orig[5] = strdup("--");
-        argv_orig[6] = strdup("Genode");
+        argv_orig[6] = strdup("/Genode");
 
         main(argc, argv_orig, envp);
         Genode::log("afl-fuzz test completed.");

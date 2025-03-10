@@ -1,22 +1,20 @@
 diff --git a/src/afl-forkserver.c b/src/afl-forkserver.c
-index d075218d..029368eb 100644
+index d075218d..5ffffb29 100644
 --- a/src/afl-forkserver.c
 +++ b/src/afl-forkserver.c
-@@ -272,6 +272,13 @@ void afl_fsrv_start(afl_forkserver_t *fsrv, char **argv,
+@@ -272,7 +272,10 @@ void afl_fsrv_start(afl_forkserver_t *fsrv, char **argv,
    (void) stop_soon_p;
    (void) debug_child_output;
    fsrv->use_shmem_fuzz = 1;
-+  fsrv->init_child_func;
-+  fsrv->fsrv_pid;
-+  fsrv->map_size;
-+  fsrv->real_map_size;
-+  fsrv->use_shmem_fuzz;
-+  fsrv->snapshot;
-+  fsrv->last_run_timed_out;
- // "Forkserver does not need to be started in Genode.";
+-// "Forkserver does not need to be started in Genode.";
++  fsrv->map_size = MAP_SIZE;
++  fsrv->real_map_size = MAP_SIZE;
++  fsrv->snapshot = 0;
++  fsrv->last_run_timed_out = 0;
  }
  
-@@ -420,14 +427,6 @@ fsrv_run_result_t __attribute__((hot))
+ /* Stop the forkserver and child */
+@@ -420,14 +423,6 @@ fsrv_run_result_t __attribute__((hot))
  afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
                      volatile u8 *stop_soon_p) {
  
@@ -31,7 +29,7 @@ index d075218d..029368eb 100644
    /* After this memset, fsrv->trace_bits[] are effectively volatile, so we
       must prevent any earlier operations from venturing into that
       territory. */
-@@ -440,55 +439,18 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
+@@ -440,55 +435,18 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
  
    struct Exec_data exec_data = { };
  
@@ -91,7 +89,7 @@ index d075218d..029368eb 100644
  
    }
  
-@@ -502,8 +464,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
+@@ -502,8 +460,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
  
    MEM_BARRIER();
  
@@ -100,7 +98,7 @@ index d075218d..029368eb 100644
    /* Was the run unsuccessful? */
    if (unlikely(*(u32 *)fsrv->trace_bits == EXEC_FAIL_SIG)) {
  
-@@ -516,17 +476,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
+@@ -516,17 +472,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
  
      fsrv->last_kill_signal = fsrv->child_kill_signal;
  
@@ -118,7 +116,7 @@ index d075218d..029368eb 100644
      return FSRV_RUN_TMOUT;
  
    }
-@@ -552,16 +501,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
+@@ -552,16 +497,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
      fsrv->last_kill_signal =
          WIFSIGNALED(fsrv->child_status) ? WTERMSIG(fsrv->child_status) : 0;
  
@@ -135,7 +133,7 @@ index d075218d..029368eb 100644
  
      return FSRV_RUN_CRASH;
  
-@@ -570,44 +509,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
+@@ -570,44 +505,6 @@ afl_fsrv_run_target(afl_forkserver_t *fsrv, u32 timeout,
    /* success :) */
    return FSRV_RUN_OK;
  

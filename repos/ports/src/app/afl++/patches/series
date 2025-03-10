@@ -11,3 +11,4 @@ enable_shared_memory_fuzzing.patch
 remove_FreeBSD_macros.patch
 remove_BIN_DOC_PATH.patch
 remove_exec_ms.patch
+remove_getrusage.patch
