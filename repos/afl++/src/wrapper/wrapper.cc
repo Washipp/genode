@@ -13,7 +13,7 @@ void Component::construct(Genode::Env &env)
 {
     compiler_rt_init(env);
 
-    int exit_code = function_to_fuzz(__afl_fuzz_ptr);
+    int exit_code = call_function(function_to_fuzz);
 
     env.parent().exit(exit_code);
 }
