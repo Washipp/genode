@@ -1,4 +1,3 @@
-LIBS += base
 SRC_CC += compiler_rt.cc shm_client.cc
 
 INC_DIR += $(REP_DIR)/include/shm
