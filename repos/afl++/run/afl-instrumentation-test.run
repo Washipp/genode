@@ -1,7 +1,4 @@
-build { core lib/ld lib/libc lib/vfs init test/instrumentation  }
-
-import_from_depot [depot_user]/src/vfs \
-                  [depot_user]/src/libc
+build { core lib/ld init test/instrumentation  }
 
 create_boot_directory
 
@@ -19,10 +16,6 @@ install_config {
 	<default caps="200"/>
 	<start name="instrumentation-test-component">
 		<resource name="RAM" quantum="50M"/>
-        <config>
-            <vfs> <dir name="dev"> <log/> </dir> </vfs>
-            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log"/>
-        </config>
 	</start>
 </config>}
 

@@ -1,10 +1,8 @@
-#include <libc/component.h>
+#include <base/component.h>
 #include <base/log.h>
 
-void Libc::Component::construct(Libc::Env &env)
+void Component::construct(Genode::Env &env)
 {
     (void) env;
-    Libc::with_libc([&] () {
-        Genode::log("Instrumentation test succeeded.");
-    });
+    Genode::log("Instrumentation test succeeded.");
 }
