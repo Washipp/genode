@@ -2,8 +2,6 @@ build { core init timer lib/ld
         lib/libc lib/libm lib/vfs
         lib/vfs_jitterentropy
         lib/vfs_pipe
-        lib/libsanitizer_common
-        lib/libubsan
         server/lx_fs
         server/report_rom
         afl-fuzz
