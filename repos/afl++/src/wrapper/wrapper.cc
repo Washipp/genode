@@ -3,17 +3,20 @@
 
 /* Genode includes*/
 #include <base/component.h>
+#include <base/stdint.h>
 
-//extern void sanitizer_init(Genode::Env &);
-//extern void sanitizer_exit();
+using namespace Genode;
 
-extern int function_to_fuzz(void *input);
+int log(void *input, unsigned int * len) {
+    Genode::log(Cstring((char const *)input, (size_t)len));
+    return 0;
+}
 
-void Component::construct(Genode::Env &env)
+void Component::construct(Env &env)
 {
     compiler_rt_init(env);
 
-    int exit_code = call_function(function_to_fuzz);
+    int exit_code = call_function(log);
 
     env.parent().exit(exit_code);
 }

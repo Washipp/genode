@@ -112,7 +112,7 @@ int call_function(Function_to_fuzz function_to_fuzz) {
         Genode::warning("Compiler runtime not constructed yet. This could lead to issues."
                         "Call 'compiler_rt_init()' first. ");
     }
-    return function_to_fuzz(__afl_fuzz_ptr);
+    return function_to_fuzz(__afl_fuzz_ptr, __afl_fuzz_len);
 }
 
 void compiler_rt_init(Genode::Env &env) {

@@ -4,7 +4,7 @@
 /* Genode includes*/
 #include <base/component.h>
 
-typedef int (*Function_to_fuzz)(void*);
+typedef int (*Function_to_fuzz)(void*, unsigned int *);
 
 extern int call_function(Function_to_fuzz function_to_fuzz);
 
