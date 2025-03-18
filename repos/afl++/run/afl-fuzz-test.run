@@ -59,7 +59,7 @@ install_config {
 
     <start name="afl-fuzz">
 		<resource name="RAM" quantum="1500M"/>
-        <config>
+        <config input_dir="./input" output_dir="./output">
             <vfs>
                 <dir name="dev">
                     <log/>

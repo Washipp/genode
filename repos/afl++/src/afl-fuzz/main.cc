@@ -27,10 +27,18 @@ class Afl_fuzz::Main {
     Libc::Env &_env;
     Timer::Connection _timer { _env };
 
+    /* Read config */
+    Attached_rom_dataspace _config_rom { _env, "config" };
+    int _max_tries { _config_rom.xml().attribute_value("max_tries", 50) };
+    String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
+    String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
+    String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
+
     /* Reporter starts new SUT */
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
     int _version { 0 };
 
+    /* The state rom and signal receiver are used to wait until the child finished execution. */
     Attached_rom_dataspace _state_rom { _env, "state" };
     Signal_receiver _signal_receiver { };
     Signal_context sc { };
@@ -72,21 +80,6 @@ class Afl_fuzz::Main {
                 xml.node("config", [&]() {
                     xml.attribute("coverage_map_shmid", coverage_map_shmid);
                     xml.attribute("fuzzing_shmid", fuzzing_shmid);
-                    xml.node("vfs", [&]() {
-                        xml.node("dir", [&]() {
-                            xml.attribute("name", "dev");
-                            xml.node("log", [&]() { });
-                        });
-                    });
-                    xml.node("libc", [&]() {
-                        xml.attribute("stdin", "/dev/log");
-                        xml.attribute("stdout", "/dev/log");
-                        xml.attribute("stderr", "/dev/log");
-                    });
-                    xml.node("default-policy", [&]() {
-                        xml.attribute("root", "/");
-                        xml.attribute("writeable", "yes");
-                    });
                 });
 
                 xml.node("route", [&]() {
@@ -108,17 +101,16 @@ public:
 
         _generate_new_report(coverage_map_shmid, fuzzing_shmid);
 
-        // TODO: Make max-tries configurable?
-        int max_tries = 100;
         bool finished_execution = false;
 
-        for(int i = 0; i < max_tries && !finished_execution; i++) {
+        for(int i = 0; i < _max_tries && !finished_execution; i++) {
             _signal_receiver.wait_for_signal();
 
             _state_rom.update();
             const Xml_node cfg = _state_rom.xml();
             if (!cfg.has_type("empty") && cfg.has_sub_node("child")) {
                 const Xml_node child = cfg.sub_node("child");
+
                 if (child.has_attribute("exited")) {
                     finished_execution = true;
                     _status = child.attribute_value("exited", 0);
@@ -128,6 +120,7 @@ public:
                         _status = EXIT_FAILURE;
                     }
                 }
+
             }
 
             if (_timer.curr_time().trunc_to_plain_ms().value - start > timeout) {
@@ -143,6 +136,26 @@ public:
 
         /* everything good. */
         return 1;
+    }
+
+    void start_afl_fuzz() {
+        Libc::with_libc([&]() {
+            int argc = 9;
+            char **argv_orig = (char **) malloc(argc * sizeof(char *));
+            char **envp = (char **) malloc(1 * sizeof(char *));
+
+            const char *args[] = {"./program",
+                                  "-i", _input_dir.string(),
+                                  "-o", _output_dir.string(),
+                                  "-t", _timeout_ms.string(),
+                                  "--", "/Genode"};
+
+            for (int i = 0; i < argc; ++i) {
+                argv_orig[i] = strdup(args[i]);
+            }
+
+            main(argc, argv_orig, envp);
+        });
     }
 
     Main(Libc::Env &env) : _env(env)
@@ -171,24 +184,5 @@ void Libc::Component::construct(Libc::Env &env)
     Afl_fuzz::Main init_main(env);
     main_reporter = &init_main;
 
-    // TODO: Patch the option directly into afl++.
-    setenv("AFL_NO_UI", "1", 1);
-    setenv("AFL_NO_FORKSRV", "1", 1);
-
-    Libc::with_libc([&]() {
-        int argc = 7;
-        char **argv_orig = (char **) malloc(argc * sizeof(char *));
-        char **envp = (char **) malloc(1 * sizeof(char *));
-
-        argv_orig[0] = strdup("./program");
-        argv_orig[1] = strdup("-i");
-        argv_orig[2] = strdup("./input");
-        argv_orig[3] = strdup("-o");
-        argv_orig[4] = strdup("./output");
-        argv_orig[5] = strdup("--");
-        argv_orig[6] = strdup("/Genode");
-
-        main(argc, argv_orig, envp);
-        Genode::log("afl-fuzz test completed.");
-    });
+    init_main.start_afl_fuzz();
 }
