@@ -6,7 +6,7 @@ build { core init timer lib/ld
         server/report_rom
         afl-fuzz
         shm
-        wrapper
+        harness/example_crash
         }
 
 import_from_depot [depot_user]/src/vfs_jitterentropy \
@@ -59,7 +59,7 @@ install_config {
 
     <start name="afl-fuzz">
 		<resource name="RAM" quantum="1500M"/>
-        <config input_dir="./input" output_dir="./output">
+        <config input_dir="./input" output_dir="./output" harness="example_crash">
             <vfs>
                 <dir name="dev">
                     <log/>

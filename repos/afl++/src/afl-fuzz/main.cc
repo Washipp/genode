@@ -33,6 +33,7 @@ class Afl_fuzz::Main {
     String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
     String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
     String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
+    String<256> _harness { _config_rom.xml().attribute_value("harness", String<256>("example_crash")) };
 
     /* Reporter starts new SUT */
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
@@ -70,7 +71,7 @@ class Afl_fuzz::Main {
             });
             xml.node("start", [&]() {
                 xml.node("heartbeat", [&]() { });
-                xml.attribute("name", "wrapper");
+                xml.attribute("name", _harness);
                 xml.attribute("caps", "500");
                 xml.attribute("version", ++_version);
                 xml.node("resource", [&]() {
