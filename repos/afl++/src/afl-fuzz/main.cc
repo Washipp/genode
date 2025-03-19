@@ -41,9 +41,9 @@ class Afl_fuzz::Main {
 
     /* The state rom and signal receiver are used to wait until the child finished execution. */
     Attached_rom_dataspace _state_rom { _env, "state" };
-    Signal_receiver _signal_receiver { };
-    Signal_context sc { };
-    Signal_context_capability _signal_handler = _signal_receiver.manage(sc);
+    Signal_receiver _signal_receiver {};
+    Signal_context _sc {};
+    Signal_context_capability _signal_handler = _signal_receiver.manage(_sc);
 
     int _status { -1 };
 
@@ -96,7 +96,10 @@ public:
 
     /* This function reports and starts a new child. Then it waits until there is an exit code
      * in the reported state, the timeout is reached or max tries is reached. */
-    int report_new_target(int coverage_map_shmid, int fuzzing_shmid, struct Exec_data *exec_data, uint64_t timeout)
+    int __attribute__((hot)) report_new_target(int coverage_map_shmid,
+                                               int fuzzing_shmid,
+                                               struct Exec_data *exec_data,
+                                               uint64_t timeout)
     {
         uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
 
@@ -104,7 +107,7 @@ public:
 
         bool finished_execution = false;
 
-        for(int i = 0; i < _max_tries && !finished_execution; i++) {
+        for (int i = 0; i < _max_tries && !finished_execution; i++) {
             _signal_receiver.wait_for_signal();
 
             _state_rom.update();
@@ -139,17 +142,18 @@ public:
         return 1;
     }
 
-    void start_afl_fuzz() {
+    void start_afl_fuzz()
+    {
         Libc::with_libc([&]() {
             int argc = 9;
             char **argv_orig = (char **) malloc(argc * sizeof(char *));
             char **envp = (char **) malloc(1 * sizeof(char *));
 
-            const char *args[] = {"./program",
-                                  "-i", _input_dir.string(),
-                                  "-o", _output_dir.string(),
-                                  "-t", _timeout_ms.string(),
-                                  "--", "/Genode"};
+            const char *args[] = { "./program",
+                                   "-i", _input_dir.string(),
+                                   "-o", _output_dir.string(),
+                                   "-t", _timeout_ms.string(),
+                                   "--", "/Genode" };
 
             for (int i = 0; i < argc; ++i) {
                 argv_orig[i] = strdup(args[i]);
@@ -170,10 +174,10 @@ public:
 Afl_fuzz::Main *main_reporter;
 
 /* This function call replaces the fork() and execv() call in afl-fuzz. */
-extern "C" int call_report_new_forkserver(int coverage_map_shmid,
-                                          int fuzzing_shmid,
-                                          struct Exec_data *exec_data,
-                                          int timeout)
+extern "C" int __attribute__((hot)) call_report_new_forkserver(int coverage_map_shmid,
+                                                               int fuzzing_shmid,
+                                                               struct Exec_data *exec_data,
+                                                               int timeout)
 {
     return main_reporter->report_new_target(coverage_map_shmid, fuzzing_shmid, exec_data, (Genode::uint64_t) timeout);
 }
