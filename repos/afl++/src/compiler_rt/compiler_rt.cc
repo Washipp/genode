@@ -92,6 +92,14 @@ int call_function(Function_to_fuzz function_to_fuzz) {
     return function_to_fuzz(__afl_fuzz_ptr, __afl_fuzz_len);
 }
 
+u8 *get_fuzz_ptr() {
+    return __afl_fuzz_ptr;
+}
+u32 *get_fuzz_len() {
+    return __afl_fuzz_len;
+}
+
+
 void compiler_rt_init(Genode::Env &env) {
     if (!c_rt.constructed()) {
         c_rt.construct(env);

@@ -31,6 +31,8 @@ typedef int (*Function_to_fuzz)(void*, unsigned int *);
 
 extern int call_function(Function_to_fuzz function_to_fuzz);
 
+u8 *get_fuzz_ptr();
+u32 *get_fuzz_len();
 extern void compiler_rt_init(Genode::Env &env);
 
 #endif //GENODE_COMPILER_RT_H
