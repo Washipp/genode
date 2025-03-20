@@ -1,0 +1,106 @@
+build { core init timer lib/ld
+        lib/libc lib/libm lib/vfs
+        lib/vfs_jitterentropy
+        lib/vfs_pipe
+        server/lx_fs
+        server/report_rom
+        afl-fuzz
+        shm
+        harness/pd_session
+        }
+
+import_from_depot [depot_user]/src/vfs_jitterentropy \
+                  [depot_user]/src/vfs \
+                  [depot_user]/src/vfs_pipe \
+                  [depot_user]/src/libc
+
+create_boot_directory
+
+install_config {
+<config verbose="yes">
+    <parent-provides>
+        <service name="LOG"/>
+        <service name="PD"/>
+        <service name="RM"/>
+        <service name="CPU"/>
+        <service name="ROM"/>
+    </parent-provides>
+    <default-route>
+        <any-service> <parent/> </any-service>
+    </default-route>
+    <default caps="350"/>
+    <start name="timer">
+        <resource name="RAM" quantum="1M"/>
+        <provides> <service name="Timer"/> </provides>
+    </start>
+    <start name="afl-shm-server" caps="100">
+        <resource name="RAM" quantum="200M"/>
+        <provides> <service name="Shm_session"/> </provides>
+    </start>
+
+    <start name="lx_fs" caps="200" ld="no">
+        <resource name="RAM" quantum="4M"/>
+        <provides> <service name="File_system"/> </provides>
+        <config> <default-policy root="/" writeable="yes"/> </config>
+    </start>
+
+    <start name="startup_report_rom">
+        <binary name="report_rom"/>
+        <resource name="RAM" quantum="2M"/>
+        <provides>
+            <service name="Report"/>
+            <service name="ROM"/>
+        </provides>
+        <config>
+            <policy label="startup_init -> config" report="afl-fuzz -> config"/>
+            <policy label="afl-fuzz -> state" report="startup_init -> state"/>
+        </config>
+    </start>
+
+    <start name="afl-fuzz">
+        <resource name="RAM" quantum="1500M"/>
+        <config input_dir="./input" output_dir="./output" harness="pd_session_harness">
+            <vfs>
+                <dir name="dev">
+                    <log/>
+                    <null/>
+                    <dir name="pipe"> <pipe/> </dir>
+                    <inline name="rtc">2025-01-01 01:01</inline>
+                    <jitterentropy name="urandom"/>
+                </dir>
+                <dir name="output"> <fs/> </dir>
+                <dir name="input">
+                    <inline name="input-file">Random-Input</inline>
+                </dir>
+            </vfs>
+            <default-policy root="/" writeable="yes"/>
+            <libc stdin="/dev/log" stdout="/dev/log" stderr="/dev/log" rtc="/dev/rtc" rng="/dev/urandom" pipe="/dev/pipe" />
+        </config>
+        <route>
+            <service name="Shm_session"> <child name="afl-shm-server" /> </service>
+            <service name="File_system"> <child name="lx_fs" /> </service>
+            <service name="Report" label="config"> <child name="startup_report_rom"/> </service>
+            <service name="ROM" label="state"> <child name="startup_report_rom"/> </service>
+            <service name="Timer"> <child name="timer" /> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="startup_init" caps="2000">
+        <binary name="init" />
+        <resource name="RAM" quantum="1000M"/>
+        <route>
+            <service name="Shm_session"> <child name="afl-shm-server" /> </service>
+            <service name="Report" label="state"> <child name="startup_report_rom"/> </service>
+            <service name="ROM" label="config"> <child name="startup_report_rom" /> </service>
+            <service name="Timer"> <child name="timer" /> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+</config>}
+
+build_boot_image [list {*}[build_artifacts]]
+append qemu_args " -nographic "
+
+run_genode_until forever
