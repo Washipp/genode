@@ -41,9 +41,7 @@ struct Compiler_rt {
 
     void _afl_map_shm_fuzz()
     {
-        u8 *map = NULL;
-
-        map = (u8 *) shmat(_fuzzing_shmid, NULL, 0);
+        u8 *map = (u8 *) shmat(_fuzzing_shmid, NULL, 0);
 
         if (!map || map == (void *) -1) {
             Genode::error("Could not access fuzzing shared memory");
@@ -55,7 +53,7 @@ struct Compiler_rt {
     }
 
 
-    void _afl_map_shm(void)
+    void _afl_map_shm()
     {
         __afl_area_ptr = (u8 *) shmat(_coverage_map_shmid, (void *) __afl_map_addr, 0);
 
@@ -84,7 +82,8 @@ public:
 
 Constructible<Compiler_rt> c_rt;
 
-int call_function(Function_to_fuzz function_to_fuzz) {
+int call_function(Function_to_fuzz function_to_fuzz)
+{
     if (!c_rt.constructed()) {
         Genode::warning("Compiler runtime not constructed yet. This could lead to issues."
                         "Call 'compiler_rt_init()' first. ");
@@ -92,15 +91,19 @@ int call_function(Function_to_fuzz function_to_fuzz) {
     return function_to_fuzz(__afl_fuzz_ptr, __afl_fuzz_len);
 }
 
-u8 *get_fuzz_ptr() {
+u8 *get_fuzz_ptr()
+{
     return __afl_fuzz_ptr;
 }
-u32 *get_fuzz_len() {
+
+u32 *get_fuzz_len()
+{
     return __afl_fuzz_len;
 }
 
 
-void compiler_rt_init(Genode::Env &env) {
+void compiler_rt_init(Genode::Env &env)
+{
     if (!c_rt.constructed()) {
         c_rt.construct(env);
     }
