@@ -73,7 +73,7 @@ class Afl_fuzz::Main {
                 xml.node("heartbeat", [&]() { });
                 xml.attribute("name", _harness);
                 xml.attribute("caps", "500");
-                xml.attribute("version", ++_version);
+                xml.attribute("version", _version);
                 xml.node("resource", [&]() {
                     xml.attribute("name", "RAM");
                     xml.attribute("quantum", "500M");
@@ -82,13 +82,13 @@ class Afl_fuzz::Main {
                     xml.attribute("coverage_map_shmid", coverage_map_shmid);
                     xml.attribute("fuzzing_shmid", fuzzing_shmid);
                 });
-
                 xml.node("route", [&]() {
                     xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
                 });
             });
         });
 
+        _version++;
     }
 
 
