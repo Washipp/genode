@@ -1,6 +1,7 @@
 /* afl++ port includes */
 #include "init.h"
 #include "forkserver_wrapper.h"
+#include "sys/shm.h"
 
 /* Genode includes */
 #include <libc/component.h>
@@ -29,7 +30,8 @@ class Afl_fuzz::Main {
 
     /* Read config */
     Attached_rom_dataspace _config_rom { _env, "config" };
-    int _max_tries { _config_rom.xml().attribute_value("max_tries", 50) };
+    // TODO: figure out a way to determine the ideal default value of the skipped heartbeats.
+    int _max_skipped_heartbeats { _config_rom.xml().attribute_value("_max_skipped_heartbeats", 10000) };
     String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
     String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
     String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
@@ -39,13 +41,21 @@ class Afl_fuzz::Main {
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
     int _version { 0 };
 
-    /* The state rom and signal receiver are used to wait until the child finished execution. */
     Attached_rom_dataspace _state_rom { _env, "state" };
-    Signal_receiver _signal_receiver {};
-    Signal_context _sc {};
-    Signal_context_capability _signal_handler = _signal_receiver.manage(_sc);
 
     int _status { -1 };
+
+    /* In order to signal, that the SUT is done, we use a bit of shared memory. */
+    const char reset = 0;
+    char *_sut_status = nullptr;
+    int _sut_status_shmid = 0;
+    int runs_before_reset = 0;
+
+    void _setup_execution_status()
+    {
+        _sut_status_shmid = shmget(0, sizeof(char), 0);
+        _sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
+    }
 
     void _generate_new_report(int coverage_map_shmid, int fuzzing_shmid)
     {
@@ -60,9 +70,8 @@ class Afl_fuzz::Main {
                 xml.node("service", [&]() { xml.attribute("name", "RM"); });
                 xml.node("service", [&]() { xml.attribute("name", "ROM"); });
             });
-            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 50); });
+            xml.node("heartbeat", [&]() { xml.attribute("rate_ms", 5); });
             xml.node("report", [&]() {
-                xml.attribute("delay_ms", 50);
                 xml.attribute("ids", "yes");
                 xml.attribute("child_ram", "yes");
                 xml.attribute("child_caps", "yes");
@@ -81,6 +90,7 @@ class Afl_fuzz::Main {
                 xml.node("config", [&]() {
                     xml.attribute("coverage_map_shmid", coverage_map_shmid);
                     xml.attribute("fuzzing_shmid", fuzzing_shmid);
+                    xml.attribute("sut_status_shmid", _sut_status_shmid);
                 });
                 xml.node("route", [&]() {
                     xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
@@ -103,12 +113,14 @@ public:
     {
         uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
 
-        _generate_new_report(coverage_map_shmid, fuzzing_shmid);
+        /* status != 0 means that we need to restart the component. */
+        if (runs_before_reset < 10000 && _status) {
+            _generate_new_report(coverage_map_shmid, fuzzing_shmid);
+        } else {
+            runs_before_reset++;
+        }
 
-        bool finished_execution = false;
-
-        for (int i = 0; i < _max_tries && !finished_execution; i++) {
-            _signal_receiver.wait_for_signal();
+        for (;;) {
 
             _state_rom.update();
             const Xml_node cfg = _state_rom.xml();
@@ -116,12 +128,12 @@ public:
                 const Xml_node child = cfg.sub_node("child");
 
                 if (child.has_attribute("exited")) {
-                    finished_execution = true;
                     _status = child.attribute_value("exited", 0);
+                    break;
                 } else if (child.has_attribute("skipped_heartbeats")) {
-                    if (child.attribute_value("skipped_heartbeats", 0) > 10) {
-                        finished_execution = true;
+                    if (child.attribute_value("skipped_heartbeats", 0) > _max_skipped_heartbeats) {
                         _status = EXIT_FAILURE;
+                        break;
                     }
                 }
 
@@ -132,6 +144,17 @@ public:
                 _status = -11;
                 break;
             }
+
+            /* The SUT indicated, that it is ready to read a new test case. */
+            if (_sut_status[0] != 0) {
+                _status = 0;
+                break;
+            }
+        }
+
+        /* If the status is zero, there was no issue, and we do not need to restart the component. */
+        if (_status == 0) {
+            Genode::memcpy(_sut_status, &reset, sizeof(char));
         }
 
         /* Version in Exec_data is used as the process id of the child. */
@@ -165,8 +188,15 @@ public:
 
     Main(Libc::Env &env) : _env(env)
     {
-        _state_rom.sigh(_signal_handler);
+        _setup_execution_status();
     }
+
+    // define these constructors for the _sut_status pointer.
+    Main(const Main &) = delete;              // copy ctor
+    Main(Main &&) = delete;                   // move ctor
+    Main &operator=(const Main &) = delete;   // copy assignment
+    Main &operator=(Main &&) = delete;        // move assignment
+    ~Main() { }                               // dtor
 };
 
 
