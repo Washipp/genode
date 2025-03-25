@@ -15,7 +15,7 @@ void Component::construct(Env &env)
     Attached_rom_dataspace _config_rom { env, "config" };
     int _sut_status_shmid { _config_rom.xml().attribute_value("sut_status_shmid", 0) };
     int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 1) };
-    char *_sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
+    volatile char *_sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
 
     int exit_code = 0;
 

@@ -150,6 +150,8 @@ public:
             /* The SUT indicated, that it is ready to read a new test case. */
             if (_sut_status[0] != 0) {
                 _status = 0;
+                /* reset status. */
+                _sut_status[0] = 0;
                 break;
             }
         }
