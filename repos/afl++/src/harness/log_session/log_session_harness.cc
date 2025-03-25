@@ -10,16 +10,16 @@ using namespace Genode;
 
 void Component::construct(Env &env)
 {
-    env.exec_static_constructors();
     compiler_rt_init(env);
 
     Attached_rom_dataspace _config_rom { env, "config" };
     int _sut_status_shmid { _config_rom.xml().attribute_value("sut_status_shmid", 0) };
+    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 1) };
     char *_sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
 
     int exit_code = 0;
 
-    while (exit_code == 0) {
+    for (int i = 0; i < _max_iterations_before_reset; i++) {
 
         /* Test log-session. */
         exit_code = call_function([](void *data, unsigned int *len) {
@@ -30,12 +30,14 @@ void Component::construct(Env &env)
         if (exit_code == 0) {
             _sut_status[0] = 1;
 
-            // Poll for a status update.
+            /* Poll for a status update. */
             while (_sut_status[0] == 1);
 
         } else {
-            env.parent().exit(exit_code);
+            break;
         }
     }
+
+    env.parent().exit(exit_code);
 
 }

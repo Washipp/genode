@@ -31,7 +31,8 @@ class Afl_fuzz::Main {
     /* Read config */
     Attached_rom_dataspace _config_rom { _env, "config" };
     // TODO: figure out a way to determine the ideal default value of the skipped heartbeats.
-    int _max_skipped_heartbeats { _config_rom.xml().attribute_value("_max_skipped_heartbeats", 10000) };
+    int _max_skipped_heartbeats { _config_rom.xml().attribute_value("max_skipped_heartbeats", 10000) };
+    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 10000) };
     String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
     String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
     String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
@@ -91,6 +92,7 @@ class Afl_fuzz::Main {
                     xml.attribute("coverage_map_shmid", coverage_map_shmid);
                     xml.attribute("fuzzing_shmid", fuzzing_shmid);
                     xml.attribute("sut_status_shmid", _sut_status_shmid);
+                    xml.attribute("max_iterations_before_reset", _max_iterations_before_reset);
                 });
                 xml.node("route", [&]() {
                     xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
@@ -114,7 +116,7 @@ public:
         uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
 
         /* status != 0 means that we need to restart the component. */
-        if (runs_before_reset < 10000 && _status) {
+        if (runs_before_reset < _max_iterations_before_reset && _status) {
             _generate_new_report(coverage_map_shmid, fuzzing_shmid);
         } else {
             runs_before_reset++;

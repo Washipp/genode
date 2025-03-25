@@ -1,5 +1,6 @@
 /* afl++ port includes */
 #include "compiler_rt.h"
+#include "sys/shm.h"
 
 /* Genode includes*/
 #include <base/component.h>
@@ -9,6 +10,7 @@
 #include <pd_session/pd_session.h>
 #include <pd_session/client.h>
 #include <base/attached_ram_dataspace.h>
+#include <base/attached_rom_dataspace.h>
 
 using namespace Genode;
 
@@ -16,7 +18,14 @@ void Component::construct(Env &env)
 {
     compiler_rt_init(env);
 
+    Attached_rom_dataspace _config_rom { env, "config" };
+    int _sut_status_shmid { _config_rom.xml().attribute_value("sut_status_shmid", 0) };
+    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 1) };
+    char *_sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
+
     int exit_code = 0;
+
+    for (int i = 0; i < _max_iterations_before_reset; i++) {
 
     /*  First set up the PD session client */
     // FIXME: maybe a different env.pd_session_cap() is needed?
@@ -115,6 +124,7 @@ void Component::construct(Env &env)
         case Pd_session::Transfer_cap_quota_result::OUT_OF_CAPS:
         case Pd_session::Transfer_cap_quota_result::INVALID_SESSION:
         case Pd_session::Transfer_cap_quota_result::NO_REF_ACCOUNT:
+            exit_code |= 1;
             break;
         default:
             env.parent().exit(1);
@@ -124,15 +134,13 @@ void Component::construct(Env &env)
     Pd_session::Transfer_ram_quota_result ram_transfer_result = psc.transfer_quota(pd_reference.cap(), Ram_quota{interpret_as_number});
     switch (ram_transfer_result) {
         case Pd_session::Transfer_ram_quota_result::OK:
-            break;
         case Pd_session::Transfer_ram_quota_result::OUT_OF_RAM:
-            break;
         case Pd_session::Transfer_ram_quota_result::INVALID_SESSION:
         case Pd_session::Transfer_ram_quota_result::NO_REF_ACCOUNT:
             exit_code |= 1;
             break;
         default:
-            break;
+            env.parent().exit(1);
     }
 
     /* kernel specific interface */
@@ -146,7 +154,16 @@ void Component::construct(Env &env)
 //    psc.dma_addr();
 //    psc.attach_dma();
 
+        if (exit_code == 0) {
+            _sut_status[0] = 1;
 
+            /* Poll for a status update. */
+            while (_sut_status[0] == 1);
+
+        } else {
+            break;
+        }
+    }
 
     env.parent().exit(exit_code);
 }
