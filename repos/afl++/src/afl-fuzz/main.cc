@@ -47,10 +47,9 @@ class Afl_fuzz::Main {
     int _status { -1 };
 
     /* In order to signal, that the SUT is done, we use a bit of shared memory. */
-    const char reset = 0;
     char *_sut_status = nullptr;
     int _sut_status_shmid = 0;
-    int runs_before_reset = 0;
+    int _runs_before_reset = 0;
 
     void _setup_execution_status()
     {
@@ -116,10 +115,12 @@ public:
         uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
 
         /* status != 0 means that we need to restart the component. */
-        if (runs_before_reset < _max_iterations_before_reset && _status) {
+        if (_runs_before_reset >= _max_iterations_before_reset || _status != 0) {
             _generate_new_report(coverage_map_shmid, fuzzing_shmid);
         } else {
-            runs_before_reset++;
+            _runs_before_reset++;
+            /* Reset the status bit. */
+            _sut_status[0] = 0;
         }
 
         for (;;) {
@@ -150,15 +151,8 @@ public:
             /* The SUT indicated, that it is ready to read a new test case. */
             if (_sut_status[0] != 0) {
                 _status = 0;
-                /* reset status. */
-                _sut_status[0] = 0;
                 break;
             }
-        }
-
-        /* If the status is zero, there was no issue, and we do not need to restart the component. */
-        if (_status == 0) {
-            Genode::memcpy(_sut_status, &reset, sizeof(char));
         }
 
         /* Version in Exec_data is used as the process id of the child. */
