@@ -32,7 +32,7 @@ class Afl_fuzz::Main {
     Attached_rom_dataspace _config_rom { _env, "config" };
     // TODO: figure out a way to determine the ideal default value of the skipped heartbeats.
     int _max_skipped_heartbeats { _config_rom.xml().attribute_value("max_skipped_heartbeats", 10000) };
-    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 10000) };
+    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 1000) };
     String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
     String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
     String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
@@ -85,13 +85,80 @@ class Afl_fuzz::Main {
                 xml.attribute("version", _version);
                 xml.node("resource", [&]() {
                     xml.attribute("name", "RAM");
-                    xml.attribute("quantum", "500M");
+                    xml.attribute("quantum", "50M");
                 });
                 xml.node("config", [&]() {
                     xml.attribute("coverage_map_shmid", coverage_map_shmid);
                     xml.attribute("fuzzing_shmid", fuzzing_shmid);
                     xml.attribute("sut_status_shmid", _sut_status_shmid);
                     xml.attribute("max_iterations_before_reset", _max_iterations_before_reset);
+                });
+                xml.node("route", [&]() {
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "Report");
+                        xml.attribute("label", "fuzz_config");
+                        xml.node("child", [&]() {
+                            xml.attribute("name", "SUT_report_rom");
+                        }); });
+                    xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
+                });
+            });
+            xml.node("start", [&]() {
+                xml.attribute("verbose", "no");
+                xml.node("heartbeat", [&]() { });
+                xml.attribute("name", "SUT_init");
+                xml.attribute("caps", "500");
+                xml.attribute("version", _version);
+                xml.node("binary", [&]() { xml.attribute("name", "init_instrumented"); });
+                xml.node("resource", [&]() {
+                    xml.attribute("name", "RAM");
+                    xml.attribute("quantum", "500M");
+                });
+                xml.node("config", [&]() {
+                    xml.attribute("coverage_map_shmid", coverage_map_shmid);
+                    xml.attribute("fuzzing_shmid", fuzzing_shmid);
+                });
+                xml.node("route", [&]() {
+                    xml.node("service", [&]() {
+                        xml.attribute("name", "ROM");
+                        xml.attribute("label", "fuzz_config");
+                        xml.node("child", [&]() {
+                            xml.attribute("name", "SUT_report_rom");
+                        });
+                    });
+                    xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
+                });
+            });
+            xml.node("start", [&]() {
+                xml.attribute("verbose", "no");
+                xml.attribute("name", "SUT_report_rom");
+                xml.attribute("caps", "500");
+                xml.attribute("version", _version);
+                xml.node("binary", [&]() { xml.attribute("name", "report_rom"); });
+                xml.node("resource", [&]() {
+                    xml.attribute("name", "RAM");
+                    xml.attribute("quantum", "50M");
+                });
+                xml.node("provides", [&]() {
+                    xml.node("service", [&]() { xml.attribute("name", "Report"); });
+                    xml.node("service", [&]() { xml.attribute("name", "ROM"); });
+                });
+                xml.node("config", [&]() {
+                    xml.node("policy", [&]() {
+                        xml.attribute("label", "SUT_init -> fuzz_config");
+
+                        /* Concatenate _harness with " -> config" */
+                        String<32> suffix = " -> fuzz_config";
+                        size_t len1 = Genode::strlen(_harness.string());
+                        size_t len2 = Genode::strlen(suffix.string());
+                        char* combinedStr = (char *) malloc(((long)(len1 + len2 + 1)) * sizeof(char *));
+                        Genode::memcpy(combinedStr, _harness.string(), len1);
+                        Genode::memcpy(combinedStr + len1, suffix.string(), len2);
+                        xml.attribute("report", combinedStr);
+                        free(combinedStr);
+
+//                        xml.attribute("report", "rom_session_harness -> config");
+                    });
                 });
                 xml.node("route", [&]() {
                     xml.node("any-service", [&]() { xml.node("parent", [&]() { }); });
