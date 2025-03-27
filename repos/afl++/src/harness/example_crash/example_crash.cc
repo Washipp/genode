@@ -22,8 +22,8 @@ int function_to_fuzz(void *input, unsigned int *len)
 
     if (inp[0] == 'b') {
         alloc[0] = inp[0];
-        Genode::log(Cstring((char const *)input, 5));
-        if (inp[1] == 'u' || inp[1] == 'b') {
+        if (inp[1] == 'u') {
+            Genode::log(Cstring((char const *)input, 5));
             alloc[1] = inp[1];
             Genode::memcpy(alloc, input, 5);
             crash(alloc, -50000);
