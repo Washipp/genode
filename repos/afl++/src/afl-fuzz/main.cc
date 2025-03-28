@@ -30,9 +30,8 @@ class Afl_fuzz::Main {
 
     /* Read config */
     Attached_rom_dataspace _config_rom { _env, "config" };
-    // TODO: figure out a way to determine the ideal default value of the skipped heartbeats.
-    int _max_skipped_heartbeats { _config_rom.xml().attribute_value("max_skipped_heartbeats", 10000) };
-    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 1000) };
+    int _max_skipped_heartbeats { _config_rom.xml().attribute_value("max_skipped_heartbeats", 50) };
+    int _max_iterations_before_reset { _config_rom.xml().attribute_value("max_iterations_before_reset", 5000) };
     String<256> _timeout_ms { _config_rom.xml().attribute_value("timeout_ms", String<256>("200")) };
     String<256> _input_dir { _config_rom.xml().attribute_value("input_dir", String<256>("./input")) };
     String<256> _output_dir { _config_rom.xml().attribute_value("output_dir", String<256>("./output")) };
@@ -40,14 +39,14 @@ class Afl_fuzz::Main {
 
     /* Reporter starts new SUT */
     Expanding_reporter _init_config_reporter { _env, "config", "config" };
-    int _version { 0 };
+    int _version { -1 };
 
     Attached_rom_dataspace _state_rom { _env, "state" };
 
     int _status { -1 };
 
     /* In order to signal, that the SUT is done, we use a bit of shared memory. */
-    char *_sut_status = nullptr;
+    volatile char *_sut_status = nullptr;
     int _sut_status_shmid = 0;
     int _runs_before_reset = 0;
 
@@ -59,6 +58,7 @@ class Afl_fuzz::Main {
 
     void _generate_new_report(int coverage_map_shmid, int fuzzing_shmid)
     {
+        _version++;
         _init_config_reporter.generate([&](Xml_generator &xml) {
             xml.attribute("verbose", "no");
             xml.node("parent-provides", [&]() {
@@ -165,8 +165,6 @@ class Afl_fuzz::Main {
                 });
             });
         });
-
-        _version++;
     }
 
 
@@ -179,10 +177,9 @@ public:
                                                struct Exec_data *exec_data,
                                                uint64_t timeout)
     {
-        uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
-
         /* status != 0 means that we need to restart the component. */
         if (_runs_before_reset >= _max_iterations_before_reset || _status != 0) {
+            _runs_before_reset = 0;
             _generate_new_report(coverage_map_shmid, fuzzing_shmid);
         } else {
             _runs_before_reset++;
@@ -190,11 +187,19 @@ public:
             _sut_status[0] = 0;
         }
 
+        uint64_t start = _timer.curr_time().trunc_to_plain_ms().value;
+
         for (;;) {
+
+            /* The SUT indicated, that it is ready to read a new test case. */
+            if (_sut_status[0] != 0) {
+                _status = 0;
+                break;
+            }
 
             _state_rom.update();
             const Xml_node cfg = _state_rom.xml();
-            if (!cfg.has_type("empty") && cfg.has_sub_node("child")) {
+            if (cfg.has_sub_node("child") && cfg.sub_node("child").attribute_value("version", -1) == _version) {
                 const Xml_node child = cfg.sub_node("child");
 
                 if (child.has_attribute("exited")) {
@@ -212,12 +217,6 @@ public:
             if (_timer.curr_time().trunc_to_plain_ms().value - start > timeout) {
                 /* special value to signal timeout. */
                 _status = -11;
-                break;
-            }
-
-            /* The SUT indicated, that it is ready to read a new test case. */
-            if (_sut_status[0] != 0) {
-                _status = 0;
                 break;
             }
         }
@@ -241,7 +240,7 @@ public:
                                    "-i", _input_dir.string(),
                                    "-o", _output_dir.string(),
                                    "-t", _timeout_ms.string(),
-                                   "--", "/Genode" };
+                                   "--", _harness.string() };
 
             for (int i = 0; i < argc; ++i) {
                 argv_orig[i] = strdup(args[i]);
