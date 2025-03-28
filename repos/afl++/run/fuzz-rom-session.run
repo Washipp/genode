@@ -31,8 +31,8 @@ install_config {
         <any-service> <parent/> </any-service>
     </default-route>
     <default caps="350"/>
-    <start name="timer">
-        <resource name="RAM" quantum="1M"/>
+    <start name="timer" caps="450">
+        <resource name="RAM" quantum="2M"/>
         <provides> <service name="Timer"/> </provides>
     </start>
     <start name="afl-shm-server">

@@ -25,21 +25,17 @@ void Component::construct(Env &env)
     volatile char *_sut_status = (char *) shmat(_sut_status_shmid, NULL, 0);
 
     Expanding_reporter _init_config_reporter { env, "config", "fuzz_config" };
-//    Reporter _reporter { env, "config", "config" };
 
     int exit_code = 0;
 
     for (int i = 0; i < _max_iterations_before_reset; i++) {
 
-        /* Test log-session. */
         try {
             auto node = Genode::Xml_node((char const *) get_fuzz_ptr(), (size_t) get_fuzz_len());
-//        Genode::log(node);
             _init_config_reporter.generate(node);
         } catch (Xml_node::Invalid_syntax) {
             exit_code = 0;
         }
-//        _reporter.report((char const *) get_fuzz_ptr(), (size_t) get_fuzz_len());
 
         if (exit_code == 0) {
             _sut_status[0] = 1;
