@@ -1,0 +1,61 @@
+build { core init timer lib/ld
+        shm
+        test/shm/client0
+        test/shm/client1
+      }
+
+create_boot_directory
+
+install_config {
+<config>
+    <parent-provides>
+        <service name="LOG"/>
+        <service name="PD"/>
+        <service name="RM"/>
+        <service name="CPU"/>
+        <service name="ROM"/>
+    </parent-provides>
+
+    <default-route>
+        <any-service> <parent/> </any-service>
+    </default-route>
+
+    <start name="timer" caps="100">
+        <resource name="RAM" quantum="1M"/>
+        <provides><service name="Timer"/></provides>
+        <route>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="afl-shm-server" caps="100">
+        <resource name="RAM" quantum="200M"/>
+		<provides> <service name="Shm_session"/> </provides>
+        <route>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="test-afl-shm-client0" caps="200">
+        <resource name="RAM" quantum="150M"/>
+        <route>
+            <service name="Shm_session"> <child name="afl-shm-server"/> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+    <start name="test-afl-shm-client1" caps="200">
+        <resource name="RAM" quantum="150M"/>
+        <route>
+            <service name="Shm_session"> <child name="afl-shm-server"/> </service>
+            <service name="Timer"> <child name="timer"/> </service>
+            <any-service> <parent/> </any-service>
+        </route>
+    </start>
+
+</config>}
+
+build_boot_image [build_artifacts]
+append qemu_args " -nographic "
+
+run_genode_until "afl-shm test completed.*\n" 250

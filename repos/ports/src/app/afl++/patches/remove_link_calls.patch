@@ -1,0 +1,13 @@
+diff --git a/src/afl-fuzz-init.c b/src/afl-fuzz-init.c
+index a2fc4528..8fb423fe 100644
+--- a/src/afl-fuzz-init.c
++++ b/src/afl-fuzz-init.c
+@@ -1421,7 +1421,7 @@ void perform_dry_run(afl_state_t *afl) {
+ 
+ static void link_or_copy(u8 *old_path, u8 *new_path) {
+ 
+-  s32 i = link(old_path, new_path);
++  s32 i = -1;
+   if (!i) { return; }
+ 
+   s32 sfd, dfd;

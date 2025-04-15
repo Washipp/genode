@@ -1,0 +1,48 @@
+LICENSE  := ApacheLicense2.0
+VERSION  := v4.21c
+DOWNLOAD := afl++.archive
+
+URL(afl++) := https://github.com/AFLplusplus/AFLplusplus/archive/refs/tags/$(VERSION).tar.gz
+SHA(afl++) := 11f7c77d37cff6e7f65ac7cc55bab7901e0c6208e845a38764394d04ed567b30
+DIR(afl++) := src/app/afl++
+
+PATCHES   := $(addprefix ${DIR(afl++)}/patches/, \
+                         $(shell cat $(REP_DIR)/${DIR(afl++)}/patches/series))
+PATCH_OPT := -p1 -d ${DIR(afl++)}
+
+###
+# Build the gcc_plugin used for instrumentation. These instructions come from the Makefile from afl++.
+# One could only build 'gcc_plugin'. But this depends on the whole build, so to speed it up we build it here.
+# There is a patch that fixes the Makefile but the patches are only applied afterwards.
+# So if there is a way to apply the patches before the default rule is called,
+# the rule 'build_gcc_plugin' can be simplified to:
+# build_gcc_plugin: $(DOWNLOAD)
+# 	$(MAKE) -C ${DIR(afl++)} gcc_plugin
+###
+
+CXX_FLAGS = -O3 -g -funroll-loops  -Wall -std=c++11 -fPIC -fno-rtti -fno-exceptions
+
+PLUGIN_BASE = "$(shell $(CC) -print-file-name=plugin)"
+PLUGIN_FLAGS = -fPIC -fno-rtti -fno-exceptions -I$(PLUGIN_BASE)/include -I$(PLUGIN_BASE)
+
+test_deps:
+	@echo "[*] Checking for working '$(CC)'..."
+	@command -v $(CC) >/dev/null 2>&1 || ( echo "[-] Oops, can't find '$(CC)'. Make sure that it's in your \$$PATH (or set \$$CC and \$$CXX)."; exit 1 )
+	@echo "[*] Checking for gcc plugin development header files..."
+	@test -d `$(CC) -print-file-name=plugin`/include || ( echo "[-] Oops, can't find gcc header files. Be sure to install 'gcc-X-plugin-dev'."; exit 1 )
+	@echo "[+] All set and ready to build."
+
+# Optionally remove all binary instrumentation directories to make the directory lighter.
+remove_binary_instrumentation_directories:
+	@rm -rf ${DIR(afl++)}/coresight_mode
+	@rm -rf ${DIR(afl++)}/frida_mode
+	@rm -rf ${DIR(afl++)}/nyx_mode
+	@rm -rf ${DIR(afl++)}/qemu_mode
+	@rm -rf ${DIR(afl++)}/unicorn_mode
+
+
+default : build_gcc_plugin
+build_gcc_plugin: $(DOWNLOAD) test_deps remove_binary_instrumentation_directories
+	$(CXX) $(CXX_FLAGS) $(PLUGIN_FLAGS) -shared ${DIR(afl++)}/instrumentation/afl-gcc-pass.so.cc -o ${DIR(afl++)}/afl-gcc-pass.so
+
+

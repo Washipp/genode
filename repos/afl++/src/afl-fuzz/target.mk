@@ -1,0 +1,24 @@
+TARGET = afl-fuzz
+SRC_CC += main.cc shm_client.cc unistd.cc
+LIBS += base libc libm
+
+INC_DIR += $(REP_DIR)/include/afl_libc
+INC_DIR += $(REP_DIR)/include/shm
+INC_DIR += $(REP_DIR)/include/forkserver
+
+AFL++_DIR := $(call select_from_ports,afl++)/src/app/afl++
+INC_DIR += $(AFL++_DIR)/include
+
+# The following libs have also been included. Ignore them for now
+#  -ldl -lrt -lm -lz -lm
+CC_C_OPT += -Wno-format-truncation -g -Wno-pointer-sign -Wno-variadic-macros -Wall -Wextra -Wno-pointer-arith -fPIC
+
+SRC_C += afl-performance.c afl-common.c afl-forkserver.c afl-sharedmem.c
+
+AFL_FUZZ_FILES = $(notdir $(wildcard $(AFL++_DIR)/src/afl-fuzz*.c))
+SRC_C += $(AFL_FUZZ_FILES)
+
+vpath %.c $(AFL++_DIR)/src
+vpath %.cc $(REP_DIR)/src/afl_libc
+vpath shm_client.cc $(REP_DIR)/src/shm
+

@@ -1,0 +1,13 @@
+diff --git a/src/afl-fuzz-stats.c b/src/afl-fuzz-stats.c
+index 3a71e158..ef6c313a 100644
+--- a/src/afl-fuzz-stats.c
++++ b/src/afl-fuzz-stats.c
+@@ -325,7 +325,7 @@ void write_stats_file(afl_state_t *afl, u32 t_bytes, double bitmap_cvg,
+   }
+ 
+ #ifndef __HAIKU__
+-  if (getrusage(RUSAGE_CHILDREN, &rus)) { rus.ru_maxrss = 0; }
++  rus.ru_maxrss = 0;
+ #endif
+   u64 runtime_ms = afl->prev_run_time + cur_time - afl->start_time;
+   u64 overhead_ms = (afl->calibration_time_us + afl->sync_time_us +
