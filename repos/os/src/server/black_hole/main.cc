@@ -62,7 +62,7 @@ struct Black_hole::Main
 	Genode::Constructible<Uplink_client>   uplink_client  { };
 	Genode::Constructible<Play_root>       play_root      { };
 	Genode::Constructible<Record_root>     record_root    { };
-	Genode::Constructible<Log_root>        log_root    { };
+	Genode::Constructible<Log_root>        log_root       { };
 
 	Main(Genode::Env &env) : env(env)
 	{
